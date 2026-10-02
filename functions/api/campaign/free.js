@@ -4,7 +4,7 @@ export async function onRequestPost({request,env}){
   const wallet=String(body.payerWallet||"").trim();
   const mint=String(body.mintAddress||"").trim();
   if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) return new Response(JSON.stringify({ok:false,error:"Valid Solana wallet and mint are required"}),{status:400,headers:{"content-type":"application/json"}});
-  await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{});
+  await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
   await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
   const used=await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE creator_wallet=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(wallet).first();
   if(Number(used?.count||0)>=2) return new Response(JSON.stringify({ok:false,error:"You have used both free raids for the last 24 hours"}),{status:429,headers:{"content-type":"application/json"}});
