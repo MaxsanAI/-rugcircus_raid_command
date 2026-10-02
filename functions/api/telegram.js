@@ -45,32 +45,40 @@ async function sendPanel(chatId,token,appUrl){
   });
 }
 
-async function activeRaid(env){
+async function activeRaid(env,chatId,chatUsername){
   if(!env.DB) return null;
   try{
+    const groupId=String(chatId||"");
+    const username=chatUsername?"@"+String(chatUsername).replace(/^@/,""):"";
     return await env.DB.prepare(
-      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,t.ticker,t.name FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR c.ends_at > CURRENT_TIMESTAMP) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
-    ).first();
+      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,t.ticker,t.name,t.mint_address,t.pump_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR c.ends_at > CURRENT_TIMESTAMP) AND (c.telegram_group=? OR c.telegram_group=?) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
+    ).bind(groupId,username).first();
   }catch{return null}
 }
 
-async function sendRaid(chatId,env){
-  const raid=await activeRaid(env);
+async function sendRaid(chatId,env,chatUsername){
+  const raid=await activeRaid(env,chatId,chatUsername);
   const lines=[
     "⚔️ RUGCIRCUS LIVE RAID",
     "",
-    raid?.ticker ? "🪙 $"+raid.ticker+(raid.name?" · "+raid.name:"") : "🪙 $RUGCX · RUGCIRCUS",
+    raid?.ticker ? "🪙 $"+raid.ticker+(raid.name?" · "+raid.name:"") : "🪙 Community Raid",
     raid?.package ? "📦 "+raid.package : "📦 Community Raid",
+    raid?.raid_copy ? "\n📣 "+raid.raid_copy : "",
     "",
     "🔥 Join the raid and open the Command Center."
   ];
   const buttons=[
-    [{text:"🚀 Open Command Center",web_app:{url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}}],
-    [{text:"🪙 $RUGCX on Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}]
+    [{text:"🚀 Open Command Center",web_app:{url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}}]
   ];
-  if(raid?.x_url) buttons.splice(1,0,[{text:"🐦 Join X Raid",url:raid.x_url}]);
-  if(raid?.tiktok_url) buttons.splice(2,0,[{text:"🎵 Join TikTok Raid",url:raid.tiktok_url}]);
-  if(raid?.telegram_url) buttons.splice(3,0,[{text:"💬 Telegram",url:raid.telegram_url}]);
+  const row1=[];
+  if(raid?.x_url) row1.push({text:"🐦 Join X Raid",url:raid.x_url});
+  if(raid?.tiktok_url) row1.push({text:"🎵 Join TikTok Raid",url:raid.tiktok_url});
+  if(row1.length) buttons.unshift(row1);
+  const row2=[];
+  if(raid?.telegram_url) row2.push({text:"💬 Telegram",url:raid.telegram_url});
+  if(raid?.mint_address) row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+raid.mint_address});
+  if(row2.length) buttons.splice(buttons.length-1,0,row2);
+  if(raid?.pump_callout_url) buttons.splice(buttons.length-1,0,[{text:"📣 PUMP CALL OUT",url:raid.pump_callout_url}]);
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
 }
 
@@ -137,7 +145,7 @@ async function handleCommand(message,env){
   }
 
   if(cmd==="/panel"){await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);return;}
-  if(cmd==="/raid"){await sendRaid(chatId,env);return;}
+  if(cmd==="/raid"){await sendRaid(chatId,env,message.chat?.username);return;}
 
   if(cmd==="/token"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
@@ -283,7 +291,7 @@ async function handleCallback(query,env){
       return;
     }
   }
-  if(action==="raid") await sendRaid(chatId,env);
+  if(action==="raid") await sendRaid(chatId,env,query.message?.chat?.username);
   else if(action==="token") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🪙 $RUGCX",reply_markup:{inline_keyboard:[[{text:"🔥 Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}]]}});
   else if(action==="group"){
     const count=await tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId});
