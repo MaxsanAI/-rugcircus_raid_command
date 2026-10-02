@@ -27,8 +27,8 @@ export async function onRequestPost({request,env}){
   const wallet=String(body.payerWallet||"").trim();
   const clientId=String(body.clientId||"").trim();
   const mint=String(body.mintAddress||"").trim();
-  const telegramGroup=normalizeTelegramGroup(body.telegramGroup);
-  if(!/^[A-Za-z0-9_-]{16,128}$/.test(clientId)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)||!telegramGroup) return new Response(JSON.stringify({ok:false,error:"Valid free-user ID, mint and Telegram group are required"}),{status:400,headers:{"content-type":"application/json"}});
+  const telegramGroup=normalizeTelegramGroup(body.telegramGroup)||"@rugcxx";
+  if(!/^[A-Za-z0-9_-]{16,128}$/.test(clientId)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) return new Response(JSON.stringify({ok:false,error:"Valid free-user ID and mint are required"}),{status:400,headers:{"content-type":"application/json"}});
   await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN free_user_id TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
   await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
   const used=await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE free_user_id=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(clientId).first();
