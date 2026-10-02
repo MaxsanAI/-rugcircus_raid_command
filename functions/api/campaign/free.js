@@ -1,6 +1,7 @@
-async function publishRaidCard(env, campaignId, ticker, name, packageName, endsAt, xUrl, tiktokUrl, telegramUrl, pumpCalloutUrl, raidCopy){
-  if(!env.TELEGRAM_BOT_TOKEN) return;
-  const chatId=env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
+function normalizeTelegramGroup(value){const raw=String(value||"").trim();if(!raw)return "";if(/^-100\d+$/.test(raw)||/^-\d+$/.test(raw))return raw;const match=raw.match(/(?:https?:\/\/)?t\.me\/([A-Za-z0-9_]{5,})/i);if(match)return "@"+match[1];return raw.startsWith("@")?raw:"@"+raw;}
+async function publishRaidCard(env, campaignId, targetGroup, ticker, name, packageName, endsAt, xUrl, tiktokUrl, telegramUrl, pumpCalloutUrl, raidCopy){
+  if(!env.TELEGRAM_BOT_TOKEN) return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
+  const chatId=normalizeTelegramGroup(targetGroup)||env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
   const lines=["🎪 RUGCIRCUS RAID IS LIVE","", "🪙 $"+(ticker||"RUGCX")+(name?" · "+name:""), "📦 "+packageName, "⏳ Ends: "+endsAt];
   if(raidCopy) lines.push("", "📣 "+raidCopy);
   lines.push("", "⚔️ Join the raid and hit the links below.");
@@ -15,16 +16,20 @@ async function publishRaidCard(env, campaignId, ticker, name, packageName, endsA
   buttons.push(row2);
   if(pumpCalloutUrl) buttons.push([{text:"📣 PUMP CALL OUT",url:pumpCalloutUrl}]);
   buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",web_app:{url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}}]);
-  await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})}).catch(()=>{});
+  const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok) return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
+  return {ok:true,chatId,messageId:data.result?.message_id||null};
 }
 export async function onRequestPost({request,env}){
   if(!env.DB) return new Response(JSON.stringify({ok:false,error:"Database is not configured"}),{status:503,headers:{"content-type":"application/json"}});
   let body;try{body=await request.json()}catch{return new Response(JSON.stringify({ok:false,error:"Invalid JSON"}),{status:400,headers:{"content-type":"application/json"}})}
   const wallet=String(body.payerWallet||"").trim();
   const mint=String(body.mintAddress||"").trim();
-  if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) return new Response(JSON.stringify({ok:false,error:"Valid Solana wallet and mint are required"}),{status:400,headers:{"content-type":"application/json"}});
+  const telegramGroup=normalizeTelegramGroup(body.telegramGroup);
+  if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)||!telegramGroup) return new Response(JSON.stringify({ok:false,error:"Valid Solana wallet, mint and Telegram group are required"}),{status:400,headers:{"content-type":"application/json"}});
   await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
-  await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
+  await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{}); await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
   const used=await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE creator_wallet=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(wallet).first();
   if(Number(used?.count||0)>=2) return new Response(JSON.stringify({ok:false,error:"You have used both free raids for the last 24 hours"}),{status:429,headers:{"content-type":"application/json"}});
   const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
@@ -32,8 +37,8 @@ export async function onRequestPost({request,env}){
   await env.DB.prepare("INSERT INTO tokens (mint_address,ticker,name,x_url,tiktok_url,telegram_url,pump_url,dex_url) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(mint_address) DO UPDATE SET ticker=excluded.ticker,name=excluded.name,x_url=excluded.x_url,tiktok_url=excluded.tiktok_url,telegram_url=excluded.telegram_url,pump_url=excluded.pump_url,dex_url=excluded.dex_url").bind(mint,ticker,name,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,"https://pump.fun/coin/"+mint,"https://dexscreener.com/solana/"+mint).run();
   const token=await env.DB.prepare("SELECT id FROM tokens WHERE mint_address=?").bind(mint).first();
   const now=new Date();const ends=new Date(now.getTime()+24*3600000);
-  const row=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payout_wallet,creator_wallet,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,"FREE RAID",0,24,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",env.PUBLIC_TREASURY_WALLET, wallet,now.toISOString(),ends.toISOString()).run();
-  await publishRaidCard(env,row.meta.last_row_id,ticker,name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
+  const row=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payout_wallet,creator_wallet,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,"FREE RAID",0,24,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",env.PUBLIC_TREASURY_WALLET, wallet,telegramGroup,now.toISOString(),ends.toISOString()).run();
+  const telegram=await publishRaidCard(env,row.meta.last_row_id,telegramGroup,ticker,name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
   const remaining=Math.max(0,1-Number((await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE creator_wallet=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(wallet).first())?.count||0));
-  return new Response(JSON.stringify({ok:true,campaignId:row.meta.last_row_id,endsAt:ends.toISOString(),remainingFreeRaids:remaining}),{headers:{"content-type":"application/json"}});
+  return new Response(JSON.stringify({ok:true,campaignId:row.meta.last_row_id,endsAt:ends.toISOString(),remainingFreeRaids:remaining,telegram}),{headers:{"content-type":"application/json"}});
 }
