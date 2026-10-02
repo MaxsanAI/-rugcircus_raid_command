@@ -10,18 +10,13 @@ async function tgCall(method,token,body={}){
   return {ok:response.ok&&data?.ok===true,data};
 }
 
-function replyText(chatId,text,extra={}){
-  return tgCall("sendMessage",extra.token,{chat_id:chatId,text,...extra.options});
-}
-
 function commandOf(text){
   const first=(text||"").trim().split(/\s+/)[0]||"";
   return first.split("@")[0].toLowerCase();
 }
 
 function commandArgs(text){
-  const value=(text||"").trim();
-  return value.replace(/^\/\S+\s*/,"").trim();
+  return (text||"").trim().replace(/^\/\S+\s*/,"").trim();
 }
 
 function isAdmin(member){
@@ -29,6 +24,7 @@ function isAdmin(member){
 }
 
 async function requireAdmin(chatId,userId,token){
+  if(!userId) return false;
   const result=await tgCall("getChatMember",token,{chat_id:chatId,user_id:userId});
   return result.ok&&isAdmin(result.data?.result);
 }
@@ -43,7 +39,7 @@ async function sendPanel(chatId,token,appUrl){
         [{text:"📣 Announce",callback_data:"announce_help"},{text:"🧹 Moderation",callback_data:"clean_help"}],
         [{text:"📌 Pin / Unpin",callback_data:"pin_help"}],
         [{text:"📊 Group Status",callback_data:"group"}],
-        [{text:"🚀 Open Command Center",web_app:{url:__APP_URL__}}]
+        [{text:"🚀 Open Command Center",web_app:{url:appUrl}}]
       ]
     }
   });
@@ -78,6 +74,31 @@ async function sendRaid(chatId,env){
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
 }
 
+function parseDuration(value){
+  const match=String(value||"").trim().match(/^(\d{1,4})(m|h|d)?$/i);
+  if(!match) return null;
+  const amount=Number(match[1]);
+  const unit=(match[2]||"m").toLowerCase();
+  const minutes=unit==="d"?amount*1440:unit==="h"?amount*60:amount;
+  if(!Number.isInteger(minutes)||minutes<1||minutes>40320) return null;
+  return minutes*60;
+}
+
+async function memberTarget(message,env){
+  if(message.reply_to_message?.from?.id) return message.reply_to_message.from;
+  const raw=commandArgs(message.text||"");
+  const first=raw.split(/\s+/)[0]||"";
+  if(/^\d+$/.test(first)){
+    const result=await tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:message.chat.id,user_id:first});
+    if(result.ok) return result.data.result.user;
+  }
+  return null;
+}
+
+async function sendAdminError(chatId,env,text){
+  await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text});
+}
+
 async function handleCommand(message,env){
   const chatId=message.chat.id;
   const userId=message.from?.id;
@@ -86,11 +107,11 @@ async function handleCommand(message,env){
   const args=commandArgs(text);
   const appUrl=env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev";
   const group=message.chat.type==="group"||message.chat.type==="supergroup";
-  const adminCommands=new Set(["/panel","/announce","/pin","/unpin","/clean"]);
+  const adminCommands=new Set(["/panel","/announce","/pin","/unpin","/clean","/ban","/unban","/mute","/unmute"]);
 
   if(adminCommands.has(cmd)&&group){
-    if(!userId||!(await requireAdmin(chatId,userId,env.TELEGRAM_BOT_TOKEN))){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🛡️ Admins only."});
+    if(!(await requireAdmin(chatId,userId,env.TELEGRAM_BOT_TOKEN))){
+      await sendAdminError(chatId,env,"🛡️ Admins only.");
       return;
     }
   }
@@ -110,20 +131,13 @@ async function handleCommand(message,env){
   if(cmd==="/help"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
       chat_id:chatId,
-      text:"🎪 RUGCIRCUS COMMAND\n\n/start — Open Command Center\n/help — Show commands\n/raid — Active raid\n/token — $RUGCX\n/status — Bot status\n/group — Group status\n\n🛡️ Admins:\n/panel — Admin panel\n/announce <text> — Announcement\n/pin — Pin replied message\n/unpin — Remove pin\n/clean — Delete replied message"
+      text:"🎪 RUGCIRCUS COMMAND\n\n/start — Open Command Center\n/help — Show commands\n/raid — Active raid\n/token — $RUGCX\n/status — Bot status\n/group — Group status\n/id — Show chat/user IDs\n\n🛡️ Admins:\n/panel — Admin panel\n/announce <text> — Announcement\n/pin — Pin replied message\n/unpin — Remove pin\n/clean — Delete replied message\n/ban — Ban replied user\n/unban <user id> — Unban user\n/mute [10m|1h] — Mute replied user\n/unmute — Unmute replied user"
     });
     return;
   }
 
-  if(cmd==="/panel"){
-    await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);
-    return;
-  }
-
-  if(cmd==="/raid"){
-    await sendRaid(chatId,env);
-    return;
-  }
+  if(cmd==="/panel"){await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);return;}
+  if(cmd==="/raid"){await sendRaid(chatId,env);return;}
 
   if(cmd==="/token"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
@@ -138,71 +152,108 @@ async function handleCommand(message,env){
   }
 
   if(cmd==="/announce"){
-    if(!group){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 Use /announce inside a Telegram group."});
-      return;
-    }
-    if(!args){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 Usage: /announce Your announcement text"});
-      return;
-    }
+    if(!group){await sendAdminError(chatId,env,"📣 Use /announce inside a Telegram group.");return;}
+    if(!args){await sendAdminError(chatId,env,"📣 Usage: /announce Your announcement text");return;}
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 RUGCIRCUS ANNOUNCEMENT\n\n"+args});
     return;
   }
 
   if(cmd==="/pin"){
-    if(!group){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Use /pin in a group by replying to the message you want to pin."});
-      return;
-    }
+    if(!group){await sendAdminError(chatId,env,"📌 Use /pin in a group by replying to the message you want to pin.");return;}
     const target=message.reply_to_message?.message_id;
-    if(!target){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Reply to a message with /pin."});
-      return;
-    }
+    if(!target){await sendAdminError(chatId,env,"📌 Reply to a message with /pin.");return;}
     const result=await tgCall("pinChatMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,message_id:target,disable_notification:false});
-    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:result.ok?"📌 Message pinned.":"❌ Could not pin that message. Check the bot's Pin Messages permission."});
+    await sendAdminError(chatId,env,result.ok?"📌 Message pinned.":"❌ Could not pin that message. Check Pin Messages permission.");
     return;
   }
 
   if(cmd==="/unpin"){
-    if(!group){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Use /unpin inside a group."});
-      return;
-    }
+    if(!group){await sendAdminError(chatId,env,"📌 Use /unpin inside a group.");return;}
     const result=await tgCall("unpinChatMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId});
-    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:result.ok?"📌 Pinned message removed.":"❌ Could not remove the pin."});
+    await sendAdminError(chatId,env,result.ok?"📌 Pinned message removed.":"❌ Could not remove the pin.");
     return;
   }
 
   if(cmd==="/clean"){
-    if(!group){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🧹 Use /clean in a group by replying to the message you want to delete."});
-      return;
-    }
+    if(!group){await sendAdminError(chatId,env,"🧹 Use /clean in a group by replying to the message you want to delete.");return;}
     const target=message.reply_to_message?.message_id;
-    if(!target){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🧹 Reply to a message with /clean to delete it."});
-      return;
-    }
+    if(!target){await sendAdminError(chatId,env,"🧹 Reply to a message with /clean to delete it.");return;}
     const result=await tgCall("deleteMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,message_id:target});
-    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:result.ok?"🧹 Message deleted.":"❌ Could not delete that message. Check Delete Messages permission."});
+    await sendAdminError(chatId,env,result.ok?"🧹 Message deleted.":"❌ Could not delete that message. Check Delete Messages permission.");
+    return;
+  }
+
+  if(cmd==="/ban"){
+    if(!group){await sendAdminError(chatId,env,"🔨 Use /ban in a group by replying to the member's message.");return;}
+    const target=await memberTarget(message,env);
+    if(!target){await sendAdminError(chatId,env,"🔨 Reply to the member's message with /ban.");return;}
+    if(target.id===userId){await sendAdminError(chatId,env,"🛡️ You cannot ban yourself.");return;}
+    const targetMember=await tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:target.id});
+    if(targetMember.ok&&isAdmin(targetMember.data?.result)){await sendAdminError(chatId,env,"🛡️ I won't ban another administrator.");return;}
+    const result=await tgCall("banChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:target.id,revoke_messages:true});
+    await sendAdminError(chatId,env,result.ok?"🔨 Member banned.":"❌ Could not ban that member. Check Ban Users permission.");
+    return;
+  }
+
+  if(cmd==="/unban"){
+    if(!group){await sendAdminError(chatId,env,"🔓 Use /unban in a group.");return;}
+    const raw=args.split(/\s+/)[0]||"";
+    if(!/^\d+$/.test(raw)){await sendAdminError(chatId,env,"🔓 Usage: /unban <numeric user id>");return;}
+    const result=await tgCall("unbanChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:Number(raw),only_if_banned:true});
+    await sendAdminError(chatId,env,result.ok?"🔓 User unbanned.":"❌ Could not unban that user.");
+    return;
+  }
+
+  if(cmd==="/mute"){
+    if(!group){await sendAdminError(chatId,env,"🔇 Use /mute in a group by replying to the member's message.");return;}
+    const target=await memberTarget(message,env);
+    if(!target){await sendAdminError(chatId,env,"🔇 Reply to the member's message with /mute [10m|1h|1d].");return;}
+    if(target.id===userId){await sendAdminError(chatId,env,"🛡️ You cannot mute yourself.");return;}
+    const targetMember=await tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:target.id});
+    if(targetMember.ok&&isAdmin(targetMember.data?.result)){await sendAdminError(chatId,env,"🛡️ I won't mute another administrator.");return;}
+    const seconds=parseDuration(args)||3600;
+    const until=Math.floor(Date.now()/1000)+seconds;
+    const result=await tgCall("restrictChatMember",env.TELEGRAM_BOT_TOKEN,{
+      chat_id:chatId,user_id:target.id,until_date:until,
+      use_independent_chat_permissions:true,
+      permissions:{can_send_messages:false,can_send_audios:false,can_send_documents:false,can_send_photos:false,can_send_videos:false,can_send_video_notes:false,can_send_voice_notes:false,can_send_polls:false,can_send_other_messages:false,can_add_web_page_previews:false}
+    });
+    await sendAdminError(chatId,env,result.ok?"🔇 Member muted for "+Math.round(seconds/60)+" minutes.":"❌ Could not mute that member. Check Restrict Members permission.");
+    return;
+  }
+
+  if(cmd==="/unmute"){
+    if(!group){await sendAdminError(chatId,env,"🔊 Use /unmute in a group by replying to the member's message.");return;}
+    const target=await memberTarget(message,env);
+    if(!target){await sendAdminError(chatId,env,"🔊 Reply to the member's message with /unmute.");return;}
+    const result=await tgCall("restrictChatMember",env.TELEGRAM_BOT_TOKEN,{
+      chat_id:chatId,user_id:target.id,
+      permissions:{can_send_messages:true,can_send_audios:true,can_send_documents:true,can_send_photos:true,can_send_videos:true,can_send_video_notes:true,can_send_voice_notes:true,can_send_polls:true,can_send_other_messages:true,can_add_web_page_previews:true}
+    });
+    await sendAdminError(chatId,env,result.ok?"🔊 Member unmuted.":"❌ Could not unmute that member.");
     return;
   }
 
   if(cmd==="/group"){
-    if(!group){
-      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"💬 This command is for a Telegram group."});
-      return;
-    }
-    const [chatResult,countResult]=await Promise.all([
+    if(!group){await sendAdminError(chatId,env,"💬 This command is for a Telegram group.");return;}
+    const [chatResult,countResult,botResult]=await Promise.all([
       tgCall("getChat",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId}),
-      tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId})
+      tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId}),
+      tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:env.BOT_ID||0})
     ]);
     const chat=chatResult.data?.result;
+    const botStatus=botResult.ok?botResult.data?.result?.status:"unknown";
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
       chat_id:chatId,
-      text:"💬 GROUP STATUS\n\n🎪 "+(chat?.title||"RUGCIRCUS Community")+"\n👥 Members: "+(countResult.data?.result??"—")+"\n🛡️ Bot: Administrator\n\nUse /panel for admin tools."
+      text:"💬 GROUP STATUS\n\n🎪 "+(chat?.title||"RUGCIRCUS Community")+"\n👥 Members: "+(countResult.data?.result??"—")+"\n🛡️ Bot status: "+botStatus+"\n\nUse /panel for admin tools."
+    });
+    return;
+  }
+
+  if(cmd==="/id"){
+    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
+      chat_id:chatId,
+      text:"🆔 IDs\n\nChat ID: "+chatId+"\nYour User ID: "+(userId??"—")+(message.reply_to_message?.from?.id?"\nReplied User ID: "+message.reply_to_message.from.id:"")
     });
     return;
   }
@@ -214,8 +265,30 @@ async function handleCommand(message,env){
       chat_id:chatId,
       text:"🟢 RUGCIRCUS STATUS\n\n🤖 Bot: Online\n🔗 Webhook: "+(info?.url?"Connected":"Not connected")+"\n📥 Pending updates: "+(info?.pending_update_count??0)+(info?.last_error_message?"\n⚠️ Last error: "+info.last_error_message:"")
     });
-    return;
   }
+}
+
+async function handleCallback(query,env){
+  const chatId=query.message?.chat?.id;
+  if(!chatId) return;
+  await tgCall("answerCallbackQuery",env.TELEGRAM_BOT_TOKEN,{callback_query_id:query.id});
+  const action=query.data;
+  const group=query.message.chat.type==="group"||query.message.chat.type==="supergroup";
+  if(["announce_help","clean_help","pin_help","group"].includes(action)&&group){
+    const allowed=await requireAdmin(chatId,query.from?.id,env.TELEGRAM_BOT_TOKEN);
+    if(!allowed){
+      await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🛡️ Admins only."});
+      return;
+    }
+  }
+  if(action==="raid") await sendRaid(chatId,env);
+  else if(action==="token") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🪙 $RUGCX",reply_markup:{inline_keyboard:[[{text:"🔥 Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}]]}});
+  else if(action==="group"){
+    const count=await tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId});
+    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"💬 Group members: "+(count.data?.result??"—")});
+  } else if(action==="announce_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 Admin usage: /announce Your announcement text"});
+  else if(action==="clean_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🧹 Reply to a message with /clean to delete it.\n\nModeration: /ban, /unban, /mute, /unmute"});
+  else if(action==="pin_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Reply to a message with /pin to pin it, or use /unpin to remove the current pin."});
 }
 
 export async function onRequestPost({request,env}){
@@ -229,25 +302,7 @@ export async function onRequestPost({request,env}){
   let update;
   try{update=await request.json()}catch{return new Response("Bad request",{status:400})}
 
-  if(update.callback_query){
-    const q=update.callback_query;
-    const chatId=q.message?.chat?.id;
-    if(chatId){
-      await tgCall("answerCallbackQuery",env.TELEGRAM_BOT_TOKEN,{callback_query_id:q.id});
-      const action=q.data;
-      if(action==="raid") await sendRaid(chatId,env);
-      else if(action==="token") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🪙 $RUGCX",reply_markup:{inline_keyboard:[[{text:"🔥 Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}]]}});
-      else if(action==="group"){
-        const count=await tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId});
-        await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"💬 Group members: "+(count.data?.result??"—")});
-      } else if(action==="announce_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 Admin usage: /announce Your announcement text"});
-      else if(action==="clean_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"🧹 Reply to a message with /clean to delete it."});
-      else if(action==="pin_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Reply to a message with /pin to pin it, or use /unpin to remove the current pin."});
-    }
-    return new Response("ok");
-  }
-
-  const message=update.message;
-  if(message?.text) await handleCommand(message,env);
+  if(update.callback_query) await handleCallback(update.callback_query,env);
+  else if(update.message?.text) await handleCommand(update.message,env);
   return new Response("ok");
 }
