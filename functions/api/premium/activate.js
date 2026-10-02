@@ -1,5 +1,5 @@
 const RPC="https://api.mainnet-beta.solana.com";
-const PREMIUM_LAMPORTS=30000000;
+const PREMIUM_LAMPORTS=150000000;
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 async function verify(signature,recipient){
   const r=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"getTransaction",params:[signature,{encoding:"jsonParsed",commitment:"confirmed",maxSupportedTransactionVersion:0}]})});
