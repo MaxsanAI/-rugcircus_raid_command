@@ -1,29 +1,56 @@
 export async function onRequestGet({request,env}) {
   if(!env.TELEGRAM_BOT_TOKEN) return new Response("Telegram bot token is not configured",{status:503});
 
-  const webhookUrl=(env.PUBLIC_APP_URL||new URL(request.url).origin)+"/api/telegram";
-  const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/setWebhook",{
+  const appUrl=env.PUBLIC_APP_URL||new URL(request.url).origin;
+  const webhookUrl=appUrl+"/api/telegram";
+  const body={
+    url:webhookUrl,
+    allowed_updates:["message","callback_query"],
+    drop_pending_updates:false
+  };
+  if(env.TELEGRAM_WEBHOOK_SECRET) body.secret_token=env.TELEGRAM_WEBHOOK_SECRET;
+
+  const webhookResponse=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/setWebhook",{
     method:"POST",
     headers:{"content-type":"application/json"},
-    body:JSON.stringify({
-      url:webhookUrl,
-      allowed_updates:["message","callback_query"],
-      drop_pending_updates:false
-    })
+    body:JSON.stringify(body)
   });
+  const webhookData=await webhookResponse.json().catch(()=>null);
 
-  const data=await response.json().catch(()=>null);
-  if(!response.ok || !data?.ok){
-    return new Response(JSON.stringify({ok:false,error:data?.description||"Telegram webhook setup failed"}),{
+  if(!webhookResponse.ok||!webhookData?.ok){
+    return new Response(JSON.stringify({ok:false,error:webhookData?.description||"Telegram webhook setup failed"}),{
       status:502,
       headers:{"content-type":"application/json"}
     });
   }
 
+  const commands=[
+    {command:"start",description:"Open RUGCIRCUS COMMAND"},
+    {command:"help",description:"Show available commands"},
+    {command:"panel",description:"Open admin panel"},
+    {command:"raid",description:"Show active raid"},
+    {command:"announce",description:"Send admin announcement"},
+    {command:"pin",description:"Pin a message"},
+    {command:"unpin",description:"Unpin a message"},
+    {command:"clean",description:"Open moderation tools"},
+    {command:"token",description:"Show $RUGCX token"},
+    {command:"group",description:"Show group status"},
+    {command:"status",description:"Check bot and campaign status"}
+  ];
+
+  const commandResponse=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/setMyCommands",{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify({commands})
+  });
+  const commandData=await commandResponse.json().catch(()=>null);
+
   return new Response(JSON.stringify({
     ok:true,
     webhookUrl,
-    message:"Telegram webhook connected"
+    webhookSecretConfigured:Boolean(env.TELEGRAM_WEBHOOK_SECRET),
+    commandsConfigured:Boolean(commandResponse.ok&&commandData?.ok),
+    message:"RUGCIRCUS Telegram bot connected"
   }),{
     headers:{"content-type":"application/json"}
   });
