@@ -236,13 +236,15 @@ async function handleCommand(message,env){
 
   if(cmd==="/group"){
     if(!group){await sendAdminError(chatId,env,"💬 This command is for a Telegram group.");return;}
-    const [chatResult,countResult,botResult]=await Promise.all([
+    const [chatResult,countResult,meResult]=await Promise.all([
       tgCall("getChat",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId}),
       tgCall("getChatMemberCount",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId}),
-      tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:env.BOT_ID||0})
+      tgCall("getMe",env.TELEGRAM_BOT_TOKEN,{})
     ]);
     const chat=chatResult.data?.result;
-    const botStatus=botResult.ok?botResult.data?.result?.status:"unknown";
+    const botId=meResult.data?.result?.id;
+    const botMember=botId?await tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:botId}):null;
+    const botStatus=botMember?.ok?botMember.data?.result?.status:"unknown";
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
       chat_id:chatId,
       text:"💬 GROUP STATUS\n\n🎪 "+(chat?.title||"RUGCIRCUS Community")+"\n👥 Members: "+(countResult.data?.result??"—")+"\n🛡️ Bot status: "+botStatus+"\n\nUse /panel for admin tools."
