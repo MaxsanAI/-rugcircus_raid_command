@@ -1,0 +1,170 @@
+---
+const appName = "RUGCIRCUS COMMAND";
+const ticker = "$RUGCX";
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="RUGCIRCUS COMMAND — social war room for Solana meme tokens, raids, discovery and paid promotion.">
+<title>RUGCIRCUS COMMAND</title>
+<style>
+:root{color-scheme:dark;--bg:#07060b;--panel:#100d17;--panel2:#17121f;--line:#2a2034;--text:#f8f4ff;--muted:#a99fb5;--pink:#ff3f86;--violet:#9a73ff;--gold:#ffc857;--green:#52e3a2;--cyan:#55d9ff;--danger:#ff647c;--shadow:0 24px 80px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{min-height:100vh;background:radial-gradient(circle at 10% -10%,rgba(154,115,255,.22),transparent 30%),radial-gradient(circle at 100% 0,rgba(255,63,134,.17),transparent 27%),linear-gradient(145deg,#07060b,#0b0810 52%,#08070b)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.top{height:72px;position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-bottom:1px solid var(--line);background:rgba(7,6,11,.82);backdrop-filter:blur(18px)}.brand{display:flex;align-items:center;gap:11px;font-weight:950;letter-spacing:.06em}.logo{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--pink),var(--violet));box-shadow:0 0 34px rgba(255,63,134,.28)}.brand small{display:block;color:var(--muted);font-size:8px;letter-spacing:.22em;margin-top:2px}.nav{display:flex;gap:4px}.nav button,.wallet{border:1px solid transparent;background:transparent;color:var(--muted);padding:9px 12px;border-radius:10px}.nav button.active,.nav button:hover{color:#fff;background:var(--panel2);border-color:var(--line)}.wallet{color:#fff;border-color:#45364f;background:linear-gradient(135deg,#181020,#24162e)}.wrap{max-width:1440px;margin:auto;padding:28px}.page{display:none}.page.active{display:block}.hero{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}.heroCard,.panel{border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,rgba(20,16,28,.97),rgba(11,9,15,.97));box-shadow:var(--shadow)}.heroCard{padding:38px;position:relative;overflow:hidden}.heroCard:before{content:"";position:absolute;width:430px;height:430px;right:-170px;top:-220px;border-radius:50%;background:radial-gradient(circle,rgba(255,63,134,.24),transparent 65%)}.eyebrow{font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}h1{font-size:clamp(46px,6vw,82px);line-height:.88;letter-spacing:-.06em;margin:16px 0}.gradient{background:linear-gradient(90deg,#fff,var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}.lead{max-width:720px;color:var(--muted);font-size:16px;line-height:1.7}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.primary,.secondary,.danger{border-radius:12px;padding:12px 16px;border:1px solid var(--line);font-weight:850}.primary{color:#fff;background:linear-gradient(135deg,var(--pink),#855cff)}.secondary{color:#fff;background:#15111d}.danger{color:#fff;background:#32131c;border-color:#622534}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{padding:20px;border:1px solid var(--line);border-radius:17px;background:rgba(16,13,23,.84)}.metric b{display:block;font-size:25px}.metric span{font-size:10px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.panel{padding:20px}.panelHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panelHead h2{font-size:16px;margin:0}.tag{font-size:9px;color:var(--muted);border:1px solid var(--line);padding:5px 8px;border-radius:999px;white-space:nowrap}.tokens{display:grid;gap:9px}.token{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:15px;background:#100d16}.coin{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:950;background:linear-gradient(135deg,#291d39,#c72d6e)}.token b{font-size:13px}.token small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.score{color:var(--green);font-size:11px;font-weight:900}.social{display:grid;gap:10px}.post{border:1px solid var(--line);background:#0d0a12;border-radius:15px;padding:14px}.postTop{display:flex;justify-content:space-between;gap:10px}.postTop b{font-size:12px}.postTop span{font-size:10px;color:var(--muted)}.post p{font-size:13px;line-height:1.5;color:#ded7e7;margin:9px 0}.postActions{display:flex;gap:7px;flex-wrap:wrap}.tiny{border:1px solid var(--line);background:#15111d;color:var(--muted);padding:6px 8px;border-radius:8px;font-size:10px}.tiny:hover{color:#fff;border-color:#55425f}.sponsor{margin-top:18px;border:1px dashed #64426b;border-radius:16px;padding:15px;display:flex;justify-content:space-between;align-items:center;gap:15px;background:linear-gradient(135deg,rgba(255,63,134,.07),rgba(154,115,255,.07))}.sponsor b{display:block;font-size:11px}.sponsor span{font-size:10px;color:var(--muted)}.sponsor a{color:#fff;text-decoration:none;border:1px solid #4d3957;background:#21172a;padding:9px 12px;border-radius:9px;font-size:10px;font-weight:900}.raid{border:1px solid #493750;border-radius:18px;padding:18px;background:linear-gradient(135deg,#17101e,#0d0a12)}.raidTop{display:flex;justify-content:space-between;gap:12px}.live{color:var(--green);font-size:10px;font-weight:950}.raid h3{margin:6px 0;font-size:20px}.muted{color:var(--muted)}.bar{height:7px;background:#28202f;border-radius:99px;overflow:hidden;margin:15px 0}.bar i{display:block;height:100%;width:82%;background:linear-gradient(90deg,var(--pink),var(--gold));border-radius:99px}.raidBtns{display:flex;gap:8px;flex-wrap:wrap}.raidBtns button{flex:1;min-width:110px}.feedTabs{display:flex;gap:6px;overflow:auto;margin-bottom:12px}.feedTabs button{white-space:nowrap}.table{display:grid}.row{display:grid;grid-template-columns:32px 1fr auto;gap:10px;padding:11px;border-bottom:1px solid #211a28;font-size:12px}.rank{color:var(--gold);font-weight:950}.form{display:grid;gap:12px}.form label{font-size:10px;color:var(--muted)}.form input,.form textarea,.form select{width:100%;margin-top:6px;background:#0c0910;color:#fff;border:1px solid var(--line);border-radius:11px;padding:12px;outline:none}.form textarea{min-height:88px;resize:vertical}.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.plan{border:1px solid var(--line);border-radius:15px;padding:16px;background:#110e17}.plan.hot{border-color:#855cff;box-shadow:0 0 30px rgba(133,92,255,.1)}.plan b{font-size:11px}.plan strong{display:block;font-size:24px;margin:8px 0}.plan p{min-height:38px;color:var(--muted);font-size:10px;line-height:1.5}.plan button{width:100%}.featureGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.feature{border:1px solid var(--line);border-radius:15px;padding:15px;background:#110e17}.feature b{font-size:12px}.feature span{display:block;color:var(--muted);font-size:10px;line-height:1.5;margin-top:5px}.search{display:flex;gap:8px}.search input{flex:1;background:#0c0910;border:1px solid var(--line);border-radius:10px;padding:11px;color:#fff}.modal{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:60;display:none;align-items:center;justify-content:center;padding:18px}.modal.open{display:flex}.modalBox{width:min(520px,100%);border:1px solid var(--line);border-radius:20px;background:#15101d;padding:22px;box-shadow:0 30px 100px #000}.close{float:right;background:none;border:0;color:var(--muted);font-size:22px}.checkout{display:grid;gap:10px;margin-top:15px}.checkout code{display:block;padding:12px;background:#0b0810;border:1px solid var(--line);border-radius:10px;color:var(--cyan);word-break:break-all}.toast{position:fixed;right:20px;bottom:20px;z-index:70;background:#19131f;border:1px solid var(--line);padding:13px 16px;border-radius:12px;display:none;font-size:12px}.toast.show{display:block}@media(max-width:950px){.hero,.grid{grid-template-columns:1fr}.featureGrid{grid-template-columns:1fr 1fr}.nav{display:none}}@media(max-width:600px){.wrap{padding:14px}.top{padding:0 14px}.heroCard{padding:24px}.heroCard h1{font-size:48px}.metrics{gap:7px}.metric{padding:14px}.plans,.featureGrid{grid-template-columns:1fr}.sponsor{align-items:flex-start;flex-direction:column}.sponsor a{width:100%;text-align:center}.token{grid-template-columns:auto 1fr}.token>div:last-child{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="logo">🎪</div><div>RUGCIRCUS<small>COMMAND</small></div></div>
+  <nav class="nav">
+    <button class="active" data-page="home">Command</button>
+    <button data-page="explore">Explore</button>
+    <button data-page="create">Create Raid</button>
+    <button data-page="leaderboard">Leaderboard</button>
+  </nav>
+  <button class="wallet" id="wallet">Connect Wallet</button>
+</header>
+<main class="wrap">
+<section class="page active" id="page-home">
+  <div class="hero">
+    <div class="heroCard">
+      <div class="eyebrow">$RUGCX • SOCIAL WAR ROOM</div>
+      <h1>THE CIRCUS IS <span class="gradient">OPEN.</span></h1>
+      <p class="lead">A command center for Solana meme-token discovery, live social activity, raids, trading links and paid promotion. Follow the feed, enter the raid, or put your project in the front row.</p>
+      <div class="actions"><button class="primary" data-page-link="explore">Explore Tokens</button><button class="secondary" data-page-link="create">Start a Raid</button></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><b id="mRaiders">1,284</b><span>Active Raiders</span></div>
+      <div class="metric"><b id="mActions">8,421</b><span>Actions Today</span></div>
+      <div class="metric"><b>37</b><span>Live Campaigns</span></div>
+      <div class="metric"><b>12.84 SOL</b><span>Campaign Volume</span></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel"><div class="panelHead"><h2>🔥 Live Campaigns</h2><span class="tag">SOLANA</span></div><div class="tokens" id="homeTokens"></div></div>
+    <div class="panel"><div class="panelHead"><h2>⚔️ Featured Raid</h2><span class="tag">$RUGCX</span></div>
+      <div class="raid">
+        <div class="raidTop"><div><div class="live">● LIVE RAID</div><h3>RUGCIRCUS — THE MAIN EVENT</h3><span class="muted">X + TikTok + Telegram</span></div><b>82%</b></div>
+        <div class="bar"><i></i></div>
+        <div class="raidBtns"><button class="primary" onclick="openSocial('x')">🐦 Join X Raid</button><button class="secondary" onclick="openSocial('tiktok')">🎵 TikTok Raid</button><button class="secondary" onclick="openSocial('telegram')">💬 Telegram</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sponsor"><div><b>🎪 SPONSORED OFFER</b><span>Discover today's offer from the Circus sponsor network.</span></div><a id="sponsorLink" href="#" target="_blank" rel="noopener noreferrer">VISIT OFFER ↗</a></div>
+
+  <div class="grid">
+    <div class="panel"><div class="panelHead"><h2>🐦 X Social Wall</h2><span class="tag">POSTS · REPLIES · QUOTES · MEDIA</span></div>
+      <div class="feedTabs"><button class="tiny" onclick="filterFeed('all')">All</button><button class="tiny" onclick="filterFeed('post')">Posts</button><button class="tiny" onclick="filterFeed('reply')">Replies</button><button class="tiny" onclick="filterFeed('quote')">Quotes</button></div>
+      <div class="social" id="xFeed"></div>
+    </div>
+    <div class="panel"><div class="panelHead"><h2>🎵 TikTok Social Wall</h2><span class="tag">VIDEO · PHOTO · POSTS</span></div><div class="social" id="tiktokFeed"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel"><div class="panelHead"><h2>📈 Market Links</h2><span class="tag">TRADE / CHARTS</span></div><div class="tokens" id="marketLinks"></div></div>
+    <div class="panel"><div class="panelHead"><h2>🏆 Raid Activity</h2><span class="tag">LIVE</span></div><div class="table" id="activity"></div></div>
+  </div>
+</section>
+
+<section class="page" id="page-explore">
+  <div class="panel">
+    <div class="panelHead"><div><div class="eyebrow">TOKEN DIRECTORY</div><h2 style="font-size:28px;margin:8px 0">Explore the Circus</h2><span class="muted">Search a Solana mint address or browse active campaigns.</span></div><span class="tag">PUMP.FUN · DEXSCREENER · BIRDEYE</span></div>
+    <div class="search"><input id="tokenSearch" placeholder="Search ticker, name or Solana CA"><button class="primary" onclick="searchToken()">Search</button></div>
+    <div class="tokens" id="tokenList" style="margin-top:14px"></div>
+  </div>
+  <div class="featureGrid" style="margin-top:18px">
+    <div class="feature"><b>🚀 Pump.fun</b><span>Open token launch/discovery page when a compatible token URL is available.</span></div>
+    <div class="feature"><b>📊 DexScreener</b><span>Open live charts, liquidity and trading activity.</span></div>
+    <div class="feature"><b>👁 Birdeye</b><span>Market and wallet analytics for supported Solana assets.</span></div>
+    <div class="feature"><b>💱 Jupiter</b><span>Open a trading route without putting private keys in the app.</span></div>
+  </div>
+</section>
+
+<section class="page" id="page-create">
+  <div class="grid">
+    <div class="panel">
+      <div class="eyebrow">CAMPAIGN BUILDER</div><h2 style="font-size:28px;margin:8px 0">Put Your Token in the Circus</h2>
+      <div class="form">
+        <label>Contract Address<input id="ca" placeholder="Paste Solana token mint address"></label>
+        <label>Token / Campaign Name<input id="campaignName" placeholder="RUGCIRCUS"></label>
+        <label>X Post URL<input id="xUrl" placeholder="https://x.com/.../status/..."></label>
+        <label>TikTok URL<input id="tiktokUrl" placeholder="https://www.tiktok.com/@.../video/..."></label>
+        <label>Telegram<input id="telegramUrl" placeholder="https://t.me/..."></label>
+        <label>Raid Copy<textarea id="raidCopy" placeholder="Write the campaign message raiders will see..."></textarea></label>
+        <label>Duration<select id="duration"><option value="24h">24 hours</option><option value="48h">48 hours</option><option value="7d">7 days</option></select></label>
+      </div>
+    </div>
+    <div class="panel"><div class="eyebrow">SOL PROMOTION</div><h2 style="font-size:28px;margin:8px 0">Choose Your Front Row</h2>
+      <div class="plans">
+        <div class="plan"><b>FEATURED</b><strong>0.05 SOL</strong><p>Featured token placement for 24 hours.</p><button class="secondary" onclick="openPay('FEATURED',0.05)">Select</button></div>
+        <div class="plan hot"><b>MEGA RAID</b><strong>0.10 SOL</strong><p>X + TikTok + Telegram campaign placement.</p><button class="primary" onclick="openPay('MEGA RAID',0.10)">Select</button></div>
+        <div class="plan"><b>FRONT ROW</b><strong>0.25 SOL</strong><p>Premium placement plus campaign analytics.</p><button class="secondary" onclick="openPay('FRONT ROW',0.25)">Select</button></div>
+      </div>
+      <div class="panel" style="margin-top:14px;padding:15px;background:#0c0910"><b style="font-size:12px">Payment safety</b><p class="muted" style="font-size:10px;line-height:1.6">The production flow must verify the Solana transaction server-side before a campaign is activated. Treasury wallet and RPC credentials belong in Cloudflare secrets, never in browser code.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-leaderboard">
+  <div class="grid">
+    <div class="panel"><div class="panelHead"><div><div class="eyebrow">COMMUNITY</div><h2 style="font-size:28px;margin:8px 0">Top Raiders</h2></div><span class="tag">THIS WEEK</span></div><div class="table" id="leaderboard"></div></div>
+    <div class="panel"><div class="panelHead"><h2>🎪 How points work</h2><span class="tag">ANTI-SPAM</span></div><div class="featureGrid" style="grid-template-columns:1fr 1fr"><div class="feature"><b>+1 Reply</b><span>Unique campaign reply action.</span></div><div class="feature"><b>+2 Repost</b><span>Repost or quote action.</span></div><div class="feature"><b>+3 TikTok</b><span>Unique campaign participation.</span></div><div class="feature"><b>Daily cap</b><span>Limits repeated actions from one account/device.</span></div></div></div>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="payModal"><div class="modalBox"><button class="close" onclick="closePay()">×</button><div class="eyebrow">SOL CHECKOUT</div><h2 id="payTitle">FEATURED</h2><p class="muted">Campaign package: <b id="payAmount">0.05 SOL</b></p><div class="checkout"><p style="font-size:12px;line-height:1.6">Connect a Solana wallet and confirm the exact payment. In production the Worker verifies the transaction before activating the campaign.</p><code id="treasuryHint">Treasury wallet: configure PUBLIC_TREASURY_WALLET</code><button class="primary" onclick="connectWallet()">Connect Wallet</button><button class="secondary" onclick="markDemoPaid()">Demo: verify payment</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const TOKENS=[
+ {ticker:"RUGCX",name:"RUGCIRCUS",raiders:1284,actions:8421,score:"82%",address:"RUGCX_DEMO",pump:"https://pump.fun/",dex:"https://dexscreener.com/solana/"},
+ {ticker:"MEME",name:"MEME MACHINE",raiders:642,actions:3214,score:"67%",address:"MEME_DEMO",pump:"https://pump.fun/",dex:"https://dexscreener.com/solana/"},
+ {ticker:"CLOWN",name:"CLOWNDAO",raiders:391,actions:1882,score:"54%",address:"CLOWN_DEMO",pump:"https://pump.fun/",dex:"https://dexscreener.com/solana/"},
+ {ticker:"VIRALW",name:"VIRALWIRE",raiders:219,actions:1004,score:"48%",address:"VIRALW_DEMO",pump:"https://pump.fun/",dex:"https://dexscreener.com/solana/"}
+];
+const X_POSTS=[
+ {type:"post",user:"@rugcircusHQ",time:"2m",text:"THE CIRCUS IS OPEN 🎪 $RUGCX — who's stepping into the ring?",likes:184,reposts:71,replies:39,url:"https://x.com/"},
+ {type:"reply",user:"@solmaxi",time:"5m",text:"Replying from the front row. 🎪🔥",likes:42,reposts:12,replies:8,url:"https://x.com/"},
+ {type:"quote",user:"@crypto_demon",time:"8m",text:"Found the loudest circus on Solana today. 🎪",likes:92,reposts:33,replies:14,url:"https://x.com/"}
+];
+const TIKTOK=[
+ {kind:"video",user:"@clownalpha",time:"11m",text:"When the token raid actually becomes a circus. 🎪🔥",url:"https://www.tiktok.com/"},
+ {kind:"photo",user:"@solmemes",time:"17m",text:"Photo post · $RUGCX backstage pass.",url:"https://www.tiktok.com/"},
+ {kind:"video",user:"@degenring",time:"24m",text:"Front row on Solana. Who is joining?",url:"https://www.tiktok.com/"}
+];
+const LEADERS=[["@crypto_demon",184],["@solmaxi",161],["@moonclown",143],["@degenlord",119],["@circusape",101]];
+const ACTIVITY=[["@crypto_demon","joined X raid","$RUGCX","2s"],["@solmaxi","opened TikTok raid","$RUGCX","11s"],["@moonclown","quoted post","$MEME","24s"],["@degenlord","joined campaign","$CLOWN","39s"],["@circusape","replied","$RUGCX","51s"]];
+
+function showPage(page){document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+document.querySelectorAll("[data-page-link]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageLink)));
+function toast(message){const el=document.getElementById("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2300)}
+function openSocial(type){const links={x:"https://x.com/",tiktok:"https://www.tiktok.com/",telegram:"https://t.me/"};window.open(links[type],"_blank","noopener");toast(type.toUpperCase()+" opened")}
+function card(t){return '<div class="token"><div class="coin">'+t.ticker[0]+'</div><div><b>$'+t.ticker+' · '+t.name+'</b><small>'+t.raiders.toLocaleString()+' raiders · '+t.actions.toLocaleString()+' actions · live social activity</small></div><div><div class="score">'+t.score+'</div><button class="tiny" onclick="openToken(\''+t.ticker+'\')">View</button></div></div>'}
+document.getElementById("homeTokens").innerHTML=TOKENS.slice(0,3).map(card).join("");
+document.getElementById("tokenList").innerHTML=TOKENS.map(card).join("");
+document.getElementById("marketLinks").innerHTML=TOKENS.slice(0,4).map(t=>'<div class="token"><div class="coin">↗</div><div><b>$'+t.ticker+' · '+t.name+'</b><small>Market / chart / trade shortcuts</small></div><div><a class="tiny" href="'+t.dex+'" target="_blank" rel="noopener">Chart</a></div></div>').join("");
+document.getElementById("leaderboard").innerHTML=LEADERS.map((x,i)=>'<div class="row"><span class="rank">'+(i+1)+'</span><b>'+x[0]+'</b><strong>'+x[1]+' pts</strong></div>').join("");
+document.getElementById("activity").innerHTML=ACTIVITY.map(x=>'<div class="row"><span class="rank">●</span><b>'+x[0]+' <span class="muted">'+x[1]+'</span></b><strong>'+x[3]+'</strong></div>').join("");
+function renderX(filter="all"){document.getElementById("xFeed").innerHTML=X_POSTS.filter(p=>filter==="all"||p.type===filter).map(p=>'<article class="post"><div class="postTop"><b>'+p.user+'</b><span>'+p.time+' · '+p.type+'</span></div><p>'+p.text+'</p><div class="postActions"><button class="tiny" onclick="openSocial(\'x\')">Open on X</button><button class="tiny" onclick="toast(\'Reply composer opened\')">Reply</button><button class="tiny" onclick="toast(\'Repost action\')">Repost</button><button class="tiny" onclick="toast(\'Quote composer opened\')">Quote</button><span class="tiny">♥ '+p.likes+' · ↻ '+p.reposts+' · 💬 '+p.replies+'</span></div></article>').join("")}
+function filterFeed(filter){renderX(filter)}
+renderX();
+document.getElementById("tiktokFeed").innerHTML=TIKTOK.map(p=>'<article class="post"><div class="postTop"><b>'+p.user+'</b><span>'+p.time+' · '+p.kind+'</span></div><p>'+p.text+'</p><div class="postActions"><button class="tiny" onclick="window.open(\''+p.url+'\',\'_blank\')">'+(p.kind==="video"?"Watch Video":"Open Photo")+'</button><button class="tiny" onclick="openSocial(\'tiktok\')">Join Raid</button></div></article>').join("");
+function openToken(ticker){const t=TOKENS.find(x=>x.ticker===ticker);if(!t)return;const text="$"+t.ticker+" · "+t.name+"\n\nPump.fun: "+t.pump+"\nDexScreener: "+t.dex+"\n\nThis token profile will be backed by live APIs once credentials are configured.";toast("Opening "+ticker+" command profile");setTimeout(()=>alert(text),50)}
+function searchToken(){const q=document.getElementById("tokenSearch").value.trim().toLowerCase();if(!q){document.getElementById("tokenList").innerHTML=TOKENS.map(card).join("");return}const found=TOKENS.filter(t=>(t.ticker+" "+t.name+" "+t.address).toLowerCase().includes(q));document.getElementById("tokenList").innerHTML=found.length?found.map(card).join(""):'<div class="post"><b>No local match.</b><p class="muted">A production token resolver will query the configured Solana market-data provider for this mint address.</p></div>'}
+let pay={name:"FEATURED",amount:0.05};
+function openPay(name,amount){pay={name,amount};document.getElementById("payTitle").textContent=name;document.getElementById("payAmount").textContent=amount.toFixed(2)+" SOL";document.getElementById("payModal").classList.add("open")}
+function closePay(){document.getElementById("payModal").classList.remove("open")}
+function connectWallet(){document.getElementById("wallet").textContent="Wallet: Demo";toast("Demo wallet connected — add Solana wallet adapter in production")}
+function markDemoPaid(){closePay();toast(pay.name+" demo payment verified — production verification required")}
+document.getElementById("wallet").addEventListener("click",connectWallet);
+document.getElementById("sponsorLink").addEventListener("click",e=>{if(document.getElementById("sponsorLink").getAttribute("href")==="#"){e.preventDefault();toast("Set PUBLIC_MONETAG_SMARTLINK before launch")}})
+</script>
+</div>
+</body>
+</html>
