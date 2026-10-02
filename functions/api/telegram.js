@@ -50,9 +50,10 @@ async function activeRaid(env,chatId,chatUsername){
   try{
     const groupId=String(chatId||"");
     const username=chatUsername?"@"+String(chatUsername).replace(/^@/,""):"";
+    const configured=String(env.TELEGRAM_RAID_CHAT_ID||"@rugcxx").trim();
     return await env.DB.prepare(
-      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,t.ticker,t.name,t.mint_address,t.pump_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR c.ends_at > CURRENT_TIMESTAMP) AND (c.telegram_group=? OR c.telegram_group=?) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
-    ).bind(groupId,username).first();
+      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,t.ticker,t.name,t.mint_address,t.pump_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR c.ends_at > CURRENT_TIMESTAMP) AND (c.telegram_group=? OR c.telegram_group=? OR c.telegram_group=?) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
+    ).bind(groupId,username,configured).first();
   }catch{return null}
 }
 
