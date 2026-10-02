@@ -28,7 +28,7 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
 }
 function normalizeTelegramGroup(value){const raw=String(value||"").trim();if(!raw)return "";if(/^-100\d+$/.test(raw)||/^-\d+$/.test(raw))return raw;const match=raw.match(/(?:https?:\/\/)?t\.me\/([A-Za-z0-9_]{5,})/i);if(match)return "@"+match[1];return raw.startsWith("@")?raw:"@"+raw;}
-async function publishRaidCard(env, campaignId, targetGroup, ticker, name, packageName, endsAt, xUrl, tiktokUrl, telegramUrl, pumpCalloutUrl, raidCopy){
+async function publishRaidCard(env, campaignId, targetGroup, mintAddress, ticker, name, packageName, endsAt, xUrl, tiktokUrl, telegramUrl, pumpCalloutUrl, raidCopy){
   if(!env.TELEGRAM_BOT_TOKEN) return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
   const chatId=normalizeTelegramGroup(targetGroup)||env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
   const lines=["🎪 RUGCIRCUS RAID IS LIVE","", "🪙 $"+(ticker||"RUGCX")+(name?" · "+name:""), "📦 "+packageName, "⏳ Ends: "+endsAt];
@@ -41,7 +41,7 @@ async function publishRaidCard(env, campaignId, targetGroup, ticker, name, packa
   if(row.length) buttons.push(row);
   const row2=[];
   if(telegramUrl) row2.push({text:"💬 TELEGRAM",url:telegramUrl});
-  row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+(env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")});
+  row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")});
   buttons.push(row2);
   if(pumpCalloutUrl) buttons.push([{text:"📣 PUMP CALL OUT",url:pumpCalloutUrl}]);
   buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",web_app:{url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}}]);
@@ -75,6 +75,6 @@ export async function onRequestPost({request,env}){
   const ends=new Date(now.getTime()+pack.hours*3600000);
   const campaign=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payment_signature,payout_wallet,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,String(body.package).toUpperCase(),pack.lamports,pack.hours,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",signature,payoutWallet,telegramGroup,now.toISOString(),ends.toISOString()).run();
   await env.DB.prepare("INSERT INTO payments (campaign_id,signature,wallet_address,lamports,status,verified_at) VALUES (?,?,?,?,?,?)").bind(campaign.meta.last_row_id,signature,String(body.payerWallet||"").trim()||null,pack.lamports,"verified",now.toISOString()).run();
-  const telegram=await publishRaidCard(env,campaign.meta.last_row_id,telegramGroup,ticker,name,String(body.package).toUpperCase(),ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
+  const telegram=await publishRaidCard(env,campaign.meta.last_row_id,telegramGroup,mint,ticker,name,String(body.package).toUpperCase(),ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
   return json({ok:true,campaignId:campaign.meta.last_row_id,endsAt:ends.toISOString(),receivedLamports:payment.receivedLamports,telegram});
 }
