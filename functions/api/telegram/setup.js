@@ -5,7 +5,7 @@ export async function onRequestGet({request,env}) {
   const webhookUrl=appUrl+"/api/telegram";
   const body={
     url:webhookUrl,
-    allowed_updates:["message","callback_query"],
+    allowed_updates:["message","callback_query","channel_post","edited_channel_post"],
     drop_pending_updates:false
   };
   if(env.TELEGRAM_WEBHOOK_SECRET) body.secret_token=env.TELEGRAM_WEBHOOK_SECRET;
@@ -32,10 +32,15 @@ export async function onRequestGet({request,env}) {
     {command:"announce",description:"Send admin announcement"},
     {command:"pin",description:"Pin a message"},
     {command:"unpin",description:"Unpin a message"},
-    {command:"clean",description:"Open moderation tools"},
+    {command:"clean",description:"Delete a replied message"},
+    {command:"ban",description:"Ban a replied member"},
+    {command:"unban",description:"Unban by user ID"},
+    {command:"mute",description:"Mute a replied member"},
+    {command:"unmute",description:"Unmute a replied member"},
     {command:"token",description:"Show $RUGCX token"},
     {command:"group",description:"Show group status"},
-    {command:"status",description:"Check bot and campaign status"}
+    {command:"id",description:"Show chat and user IDs"},
+    {command:"status",description:"Check bot webhook status"}
   ];
 
   const commandResponse=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/setMyCommands",{
