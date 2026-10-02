@@ -1,8 +1,1 @@
-{
-  "extends": "astro/tsconfigs/strict",
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
-    "baseUrl": "."
-  }
-}
+{"extends":"astro/tsconfigs/strict","compilerOptions":{"allowJs":true,"checkJs":false,"baseUrl":"."}}
