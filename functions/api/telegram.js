@@ -33,7 +33,7 @@ async function requireAdmin(chatId,userId,token){
   return result.ok&&isAdmin(result.data?.result);
 }
 
-async function sendPanel(chatId,token){
+async function sendPanel(chatId,token,appUrl){
   return tgCall("sendMessage",token,{
     chat_id:chatId,
     text:"🎪 RUGCIRCUS COMMAND\n\nChoose an action:",
@@ -116,7 +116,7 @@ async function handleCommand(message,env){
   }
 
   if(cmd==="/panel"){
-    await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN);
+    await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);
     return;
   }
 
