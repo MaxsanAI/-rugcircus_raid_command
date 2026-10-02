@@ -11,7 +11,7 @@ export async function onRequestGet({request,env}){
   if(!Number.isInteger(campaignId)||campaignId<1||!column)return json({ok:false,error:"Invalid campaign or platform"},400);
   try{
     await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
-    const row=await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=? AND status='active' AND (ends_at IS NULL OR ends_at>CURRENT_TIMESTAMP)").bind(campaignId).first();
+    const row=await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=? AND status='active' AND (ends_at IS NULL OR datetime(ends_at)>datetime('now'))").bind(campaignId).first();
     if(!row?.target)return json({ok:false,error:"Campaign link is not active"},404);
     let userId=null;
     if(WALLET_RE.test(wallet)){
