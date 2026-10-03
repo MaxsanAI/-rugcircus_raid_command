@@ -194,9 +194,11 @@ document.getElementById("closePayButton")?.addEventListener("click",closePay);
 document.getElementById("payCampaignButton")?.addEventListener("click",payCampaign);
 document.getElementById("closePremiumButton")?.addEventListener("click",closePremium);
 document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);
-window.addEventListener("error",e=>{console.error(e.error||e.message);toast("Page error: "+(e.message||"JavaScript error"));});
-window.addEventListener("unhandledrejection",e=>{console.error(e.reason);toast("Request error: "+(e.reason?.message||"Unexpected error"));});
-if(detectPhantom()){walletProvider=detectPhantom();try{const r=await walletProvider.connect({onlyIfTrusted:true});if(r?.publicKey){walletAddress=r.publicKey.toString();localStorage.setItem("rugcircus_wallet",walletAddress)}}catch{}const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM CONNECTED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}config();restoreLeaderboardForm();loadCampaigns();loadAnalytics();loadRewards();
+window.addEventListener("error",e=>{console.error("RUGCIRCUS page error",e.error||e.message)});
+window.addEventListener("unhandledrejection",e=>{console.error("RUGCIRCUS request error",e.reason)});
+const tgApp=telegramWebApp();
+if(!tgApp&&detectPhantom()){walletProvider=detectPhantom();try{const r=await walletProvider.connect({onlyIfTrusted:true});if(r?.publicKey){walletAddress=r.publicKey.toString();localStorage.setItem("rugcircus_wallet",walletAddress)}}catch{}const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM CONNECTED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}
+config();restoreLeaderboardForm();loadCampaigns();loadAnalytics();loadRewards();
 </script>
 </body>
 </html>
