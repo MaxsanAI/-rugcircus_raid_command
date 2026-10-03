@@ -147,16 +147,26 @@ async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,nam
   if(raidCopy)lines.push("","📣 "+raidCopy);
   lines.push("","⚔️ Join the raid and hit the links below.");
   const buttons=[];
-  const row=[];
-  if(xUrl)row.push({text:"🐦 X RAID",url:xUrl});
-  if(tiktokUrl)row.push({text:"🎵 TIKTOK",url:tiktokUrl});
-  if(row.length)buttons.push(row);
-  const row2=[];
-  if(telegramUrl)row2.push({text:"💬 TELEGRAM",url:telegramUrl});
-  row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")});
-  buttons.push(row2);
-  if(pumpCalloutUrl)buttons.push([{text:"📣 PUMP CALL OUT",url:pumpCalloutUrl}]);
-  buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",url:"https://raidrugcircus.pulserapp.com/"}]);
+  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:xUrl}]);
+  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:tiktokUrl}]);
+  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:telegramUrl}]);
+  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:pumpCalloutUrl}]);
+  buttons.push([
+    {text:"🪙 OPEN PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")},
+    {text:"🟢 PUMP.FUN MOVERS",url:"https://pump.fun/explore"}
+  ]);
+  buttons.push([
+    {text:"📈 DEXSCREENER",url:"https://dexscreener.com/solana"},
+    {text:"🦅 BIRDEYE",url:"https://birdeye.so/"}
+  ]);
+  buttons.push([
+    {text:"🪐 JUPITER",url:"https://jup.ag/"},
+    {text:"⚡ RAYDIUM",url:"https://raydium.io/"}
+  ]);
+  buttons.push([
+    {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
+    {text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}
+  ]);
   const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{
     method:"POST",
     headers:{"content-type":"application/json"},
