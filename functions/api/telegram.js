@@ -1,3 +1,4 @@
+import {prepareTelegramImage} from "./raid/image.js";
 const API="https://api.telegram.org/bot";
 
 async function tgCall(method,token,body={}){
@@ -71,20 +72,32 @@ async function sendRaid(chatId,env,chatUsername){
   ];
   const appUrl=env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com";
   const buttons=[];
-  if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:raid.x_url}]);
-  if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:raid.tiktok_url}]);
-  if(raid?.telegram_url) buttons.push([{text:"✈️ TELEGRAM RAID",url:raid.telegram_url}]);
-  if(raid?.pump_callout_url) buttons.push([{text:"🎯 PUMP CALLOUT",url:raid.pump_callout_url}]);
-  if(raid?.mint_address) buttons.push([{text:"🪙 OPEN PUMP.FUN",url:"https://pump.fun/coin/"+raid.mint_address}]);
-  buttons.push([{text:"🟢 PUMP.FUN MOVERS",url:"https://pump.fun/explore"}]);
-  buttons.push([{text:"📈 DEXSCREENER",url:"https://dexscreener.com/solana"}]);
-  buttons.push([{text:"🦅 BIRDEYE",url:"https://birdeye.so/"}]);
-  buttons.push([{text:"🪐 JUPITER",url:"https://jup.ag/"}]);
-  buttons.push([{text:"⚡ RAYDIUM",url:"https://raydium.io/"}]);
+  if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:"/api/raid/click?campaign="+raid.id+"&platform=x"}]);
+  if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:"/api/raid/click?campaign="+raid.id+"&platform=tiktok"}]);
+  if(raid?.telegram_url) buttons.push([{text:"✈️ TELEGRAM RAID",url:"/api/raid/click?campaign="+raid.id+"&platform=telegram"}]);
+  if(raid?.pump_callout_url) buttons.push([{text:"🎯 PUMP CALLOUT",url:"/api/raid/click?campaign="+raid.id+"&platform=callout"}]);
+  if(raid?.mint_address) buttons.push([{text:"🪙 OPEN PUMP.FUN",url:"/api/raid/click?campaign="+raid.id+"&platform=pump"}]);
+  buttons.push([{text:"🟢 PUMP.FUN MOVERS",url:"/api/raid/click?campaign="+raid.id+"&platform=movers"}]);
+  buttons.push([{text:"📈 DEXSCREENER",url:"/api/raid/click?campaign="+raid.id+"&platform=dexscreener"}]);
+  buttons.push([{text:"🦅 BIRDEYE",url:"/api/raid/click?campaign="+raid.id+"&platform=birdeye"}]);
+  buttons.push([{text:"🪐 JUPITER",url:"/api/raid/click?campaign="+raid.id+"&platform=jupiter"}]);
+  buttons.push([{text:"⚡ RAYDIUM",url:"/api/raid/click?campaign="+raid.id+"&platform=raydium"}]);
   buttons.push([{text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"}]);
   buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}]);
   const caption=lines.join("\n");
-  if(raid?.logo_url)return tgCall("sendPhoto",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,photo:raid.logo_url,caption,reply_markup:{inline_keyboard:buttons}});
+  if(raid?.logo_url){
+    const image=await prepareTelegramImage(raid.logo_url);
+    if(image){
+      const form=new FormData();
+      form.set("chat_id",chatId);
+      form.set("photo",image,"raid-preview.jpg");
+      form.set("caption",caption);
+      form.set("reply_markup",JSON.stringify({inline_keyboard:buttons}));
+      const response=await fetch(API+env.TELEGRAM_BOT_TOKEN+"/sendPhoto",{method:"POST",body:form});
+      const data=await response.json().catch(()=>null);
+      return {ok:response.ok&&data?.ok===true,data};
+    }
+  }
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons}});
 }
 
