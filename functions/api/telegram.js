@@ -1,5 +1,6 @@
 import {prepareTelegramImage} from "./raid/image.js";
 const API="https://api.telegram.org/bot";
+const APP_URL="https://raidrugcircus.pulserapp.com";
 
 async function tgCall(method,token,body={}){
   const response=await fetch(API+token+"/"+method,{
@@ -31,7 +32,7 @@ async function requireAdmin(chatId,userId,token){
 }
 
 async function sendPanel(chatId,token,appUrl){
-  const openButton={text:"🚀 Open App",web_app:{url:(appUrl||"https://raidrugcircus.pulserapp.com").replace(/\/+$/,"")+"/"}};
+  const openButton={text:"🚀 Open App",web_app:{url:APP_URL+"/"}};
   return tgCall("sendMessage",token,{
     chat_id:chatId,
     text:"🎪 RUGCIRCUS COMMAND\n\nChoose an action:",
@@ -70,7 +71,7 @@ async function sendRaid(chatId,env,chatUsername){
     "",
     "🔥 Join the raid and open the Command Center."
   ];
-  const appUrl=(env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com").replace(/\/+$/,"");
+  const appUrl=APP_URL;
   const buttons=[];
   if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=x"}]);
   if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=tiktok"}]);
