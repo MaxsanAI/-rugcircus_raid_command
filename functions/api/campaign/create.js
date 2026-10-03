@@ -40,7 +40,20 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
 }
 
-async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
+async function resolveRaidImage(imageUrl,xUrl){
+  const direct=String(imageUrl||"").trim();
+  if(/^https?:\\/\\//i.test(direct))return direct.slice(0,2000);
+  const x=String(xUrl||"").trim();
+  if(!/^https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\//i.test(x))return null;
+  try{
+    const r=await fetch(x,{headers:{"user-agent":"Mozilla/5.0 RUGCIRCUS Raid Preview"}});
+    const html=await r.text();
+    const match=html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i)||html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+    return match?.[1]?match[1].replace(/&amp;/g,"&").slice(0,2000):null;
+  }catch{return null}
+}
+
+async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl,logoUrl}){
   const info=await db.prepare("PRAGMA table_info(tokens)").all();
   const columns=new Set((info.results||[]).map(row=>String(row.name)));
   const fields={
@@ -51,6 +64,7 @@ async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
     x_url:xUrl||null,
     tiktok_url:tiktokUrl||null,
     telegram_url:telegramUrl||null,
+    logo_url:logoUrl||null,
     pump_url:"https://pump.fun/coin/"+mint,
     dex_url:"https://dexscreener.com/solana/"+mint
   };
@@ -129,7 +143,8 @@ export async function onRequestPost({request,env}){
   if(!payment.ok) return json(payment,400);
   const existing=await env.DB.prepare("SELECT id FROM payments WHERE signature=?").bind(signature).first();
   if(existing) return json({ok:false,error:"This transaction has already been used"},409);
-  const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim()});
+  const logoUrl=await resolveRaidImage(body.imageUrl,body.xUrl);
+  const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim(),logoUrl});
   const now=new Date();
   const ends=new Date(now.getTime()+pack.hours*3600000);
   const campaign=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,amount_sol,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payment_signature,payout_wallet,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,String(body.package).toUpperCase(),pack.lamports,pack.lamports/1000000000,pack.hours,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",signature,payoutWallet,telegramGroup,now.toISOString(),ends.toISOString()).run();
