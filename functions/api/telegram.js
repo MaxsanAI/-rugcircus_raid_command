@@ -69,7 +69,7 @@ async function sendRaid(chatId,env,chatUsername){
     "",
     "🔥 Join the raid and open the Command Center."
   ];
-  const appUrl=env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev";
+  const appUrl=env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com";
   const buttons=[];
   if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:raid.x_url}]);
   if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:raid.tiktok_url}]);
@@ -116,7 +116,7 @@ async function handleCommand(message,env){
   const text=message.text||"";
   const cmd=commandOf(text);
   const args=commandArgs(text);
-  const appUrl=env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev";
+  const appUrl=env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com";
   const group=message.chat.type==="group"||message.chat.type==="supergroup";
   const adminCommands=new Set(["/panel","/announce","/pin","/unpin","/clean","/ban","/unban","/mute","/unmute"]);
 
