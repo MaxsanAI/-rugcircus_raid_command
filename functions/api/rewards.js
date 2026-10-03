@@ -12,7 +12,7 @@ export async function onRequestGet({env}){
     await ensureSchema(env.DB);
     const [row,leaders]=await Promise.all([
       env.DB.prepare("SELECT COALESCE(SUM(amount_lamports),0) AS lamports FROM campaigns WHERE package!='FREE RAID' AND amount_lamports>0 AND created_at>=datetime('now','-7 days')").first(),
-      env.DB.prepare("SELECT username,wallet_address AS wallet,points FROM leaderboard_members WHERE points>0 ORDER BY points DESC,created_at ASC LIMIT 20").all()
+      env.DB.prepare("SELECT m.username,m.wallet_address AS wallet,COUNT(v.id) AS points FROM leaderboard_members m JOIN leaderboard_views v ON v.member_id=m.id AND v.viewed_at>=datetime('now','-7 days') GROUP BY m.id,m.username,m.wallet_address ORDER BY points DESC,m.created_at ASC LIMIT 20").all()
     ]);
     const paidRevenueLamports=Number(row?.lamports||0);
     const revenueContributionLamports=Math.floor(paidRevenueLamports*REWARD_BPS/10000);
