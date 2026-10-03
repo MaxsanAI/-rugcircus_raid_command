@@ -116,7 +116,7 @@ async function publishRaidCard(env, campaignId, targetGroup, mintAddress, ticker
   row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")});
   buttons.push(row2);
   if(pumpCalloutUrl) buttons.push([{text:"📣 PUMP CALL OUT",url:pumpCalloutUrl}]);
-  buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",url:env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com"}]);
+  buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",web_app:{url:env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com"}}]);
   const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})});
   const data=await response.json().catch(()=>null);
   if(!response.ok||!data?.ok) return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
