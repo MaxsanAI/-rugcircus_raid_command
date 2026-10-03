@@ -6,6 +6,9 @@ const nullable=(v,max=2000)=>{const s=clean(v,max);return s||null};
 
 async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN amount_sol REAL").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN amount_lamports INTEGER").run().catch(()=>{});
+  await db.prepare("CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,signature TEXT UNIQUE NOT NULL,wallet_address TEXT,lamports INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending',verified_at TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN free_user_id TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
