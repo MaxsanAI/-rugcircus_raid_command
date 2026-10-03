@@ -82,7 +82,7 @@ async function sendRaid(chatId,env,chatUsername){
   buttons.push([{text:"🪐 JUPITER",url:"https://jup.ag/"}]);
   buttons.push([{text:"⚡ RAYDIUM",url:"https://raydium.io/"}]);
   buttons.push([{text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"}]);
-  buttons.push([{text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}]);
+  buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}]);
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
 }
 
