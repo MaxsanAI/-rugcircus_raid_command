@@ -93,7 +93,9 @@ async function loadCampaigns(){
   featured.innerHTML='<div class="raid">'+image+'<div class="raidTitle"><div><div class="live">● ACTIVE RAID</div><h3>$'+esc(f.ticker||"TOKEN")+' — '+esc(f.name||"Campaign")+'</h3><span class="muted">'+esc(f.raid_copy||"Live social campaign")+'</span><div class="caBox"><span>CA</span><code>'+esc(f.mint_address||"Not available")+'</code><button class="copyCa" data-ca="'+esc(f.mint_address||"")+'">COPY CA</button></div></div><b>'+esc(f.package||"RAID")+'</b></div><div class="bar"><i></i></div><div class="campaignButtons">'+buttonsFor(f)+'</div></div>';
   featuredTag.textContent="LIVE";
   featured.querySelectorAll(".copyCa").forEach(b=>b.addEventListener("click",async()=>{if(!b.dataset.ca)return;try{await navigator.clipboard.writeText(b.dataset.ca);toast("Contract address copied")}catch{toast("Could not copy contract address")}}));
-  featured.querySelectorAll(".raidImage img").forEach(img=>img.addEventListener("error",()=>{img.parentElement.innerHTML='<div class="raidImageFallback">⚔️ IMAGE UNAVAILABLE</div>'},{once:true}));\n  if(leaderboardToken())recordLeaderboardView(f.id);\n  watchLeaderboardViews();
+  featured.querySelectorAll(".raidImage img").forEach(img=>img.addEventListener("error",()=>{img.parentElement.innerHTML='<div class="raidImageFallback">⚔️ IMAGE UNAVAILABLE</div>'},{once:true}));
+  if(leaderboardToken())recordLeaderboardView(f.id);
+  watchLeaderboardViews();
  }catch{el.innerHTML='<div class="status">Live campaigns unavailable right now.</div>';featured.innerHTML='<div class="status">Active raid unavailable right now.</div>';featuredTag.textContent="OFFLINE"}
 }
 async function loadExplore(){try{const r=await fetch("/api/campaigns",{cache:"no-store"});const d=await r.json();const el=document.getElementById("tokenList");if(!d.ok)throw new Error();const seen=new Set();const rows=[];for(const x of d.campaigns||[]){const key=x.mint_address||x.ticker||x.id;if(seen.has(key))continue;seen.add(key);rows.push(x)}if(!rows.length){el.innerHTML='<div class="status">No active tokens yet. Launch a raid to add the first token.</div>';return}el.innerHTML=rows.map(x=>'<div class="token"><div class="coin">'+String((x.ticker||"T")[0])+'</div><div><b>$'+String(x.ticker||"TOKEN")+' · '+String(x.name||"Token")+'</b><small>'+String(x.package||"RAID")+' · active campaign</small></div><a class="tiny" href="'+String(x.pump_url||("https://pump.fun/coin/"+(x.mint_address||"")))+'" target="_blank" rel="noopener">Pump.fun ↗</a></div>').join("")}catch{document.getElementById("tokenList").innerHTML='<div class="status">Token directory unavailable right now.</div>'}}
@@ -246,7 +248,7 @@ document.getElementById("closePremiumButton")?.addEventListener("click",closePre
 document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);
 window.addEventListener("error",e=>{console.error(e.error||e.message);toast("Page error: "+(e.message||"JavaScript error"));});
 window.addEventListener("unhandledrejection",e=>{console.error(e.reason);toast("Request error: "+(e.reason?.message||"Unexpected error"));});
-if(detectPhantom()){walletProvider=detectPhantom();const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM READY · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}config();loadCampaigns();loadAnalytics();loadRewards();
+if(detectPhantom()){walletProvider=detectPhantom();const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM READY · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}config();restoreLeaderboardForm();loadCampaigns();loadAnalytics();loadRewards();
 </script>
 </body>
 </html>
