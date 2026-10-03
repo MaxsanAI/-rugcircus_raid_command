@@ -1,3 +1,4 @@
+import {prepareTelegramImage} from "../raid/image.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 
 function normalizeTelegramGroup(value){
@@ -147,30 +148,43 @@ async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,nam
   if(raidCopy)lines.push("","📣 "+raidCopy);
   lines.push("","⚔️ Join the raid and hit the links below.");
   const buttons=[];
-  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:xUrl}]);
-  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:tiktokUrl}]);
-  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:telegramUrl}]);
-  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:pumpCalloutUrl}]);
+  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=x"}]);
+  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=tiktok"}]);
+  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=telegram"}]);
+  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:"/api/raid/click?campaign="+campaignId+"&platform=callout"}]);
   buttons.push([
-    {text:"🪙 OPEN PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")},
-    {text:"🟢 PUMP.FUN MOVERS",url:"https://pump.fun/explore"}
+    {text:"🪙 OPEN PUMP.FUN",url:"/api/raid/click?campaign="+campaignId+"&platform=pump"},
+    {text:"🟢 PUMP.FUN MOVERS",url:"/api/raid/click?campaign="+campaignId+"&platform=movers"}
   ]);
   buttons.push([
-    {text:"📈 DEXSCREENER",url:"https://dexscreener.com/solana"},
-    {text:"🦅 BIRDEYE",url:"https://birdeye.so/"}
+    {text:"📈 DEXSCREENER",url:"/api/raid/click?campaign="+campaignId+"&platform=dexscreener"},
+    {text:"🦅 BIRDEYE",url:"/api/raid/click?campaign="+campaignId+"&platform=birdeye"}
   ]);
   buttons.push([
-    {text:"🪐 JUPITER",url:"https://jup.ag/"},
-    {text:"⚡ RAYDIUM",url:"https://raydium.io/"}
+    {text:"🪐 JUPITER",url:"/api/raid/click?campaign="+campaignId+"&platform=jupiter"},
+    {text:"⚡ RAYDIUM",url:"/api/raid/click?campaign="+campaignId+"&platform=raydium"}
   ]);
   buttons.push([
     {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
     {text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}
   ]);
   const caption=lines.join("\n");
-  const method=imageUrl?"sendPhoto":"sendMessage";
-  const body=imageUrl?{chat_id:chatId,photo:imageUrl,caption,reply_markup:{inline_keyboard:buttons}}:{chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true};
-  const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/"+method,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  let response;
+  if(imageUrl){
+    const image=await prepareTelegramImage(imageUrl);
+    if(image){
+      const form=new FormData();
+      form.set("chat_id",chatId);
+      form.set("photo",image,"raid-preview.jpg");
+      form.set("caption",caption);
+      form.set("reply_markup",JSON.stringify({inline_keyboard:buttons}));
+      response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendPhoto",{method:"POST",body:form});
+    }else{
+      response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendPhoto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,photo:imageUrl,caption,reply_markup:{inline_keyboard:buttons}})});
+    }
+  }else{
+    response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})});
+  }
   const data=await response.json().catch(()=>null);
   if(!response.ok||!data?.ok)return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
   return {ok:true,chatId,messageId:data.result?.message_id||null};
