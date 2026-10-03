@@ -194,7 +194,7 @@ export async function onRequestPost({request,env}){
       return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",campaignId,telegram},502);
     }
 
-    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingFreeRaids:remaining,telegram});
+    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingFreeRaids:null,telegram});
   }catch(error){
     console.error("FREE RAID ERROR",error);
     return json({ok:false,error:String(error?.message||error||"Unknown server error")},500);
