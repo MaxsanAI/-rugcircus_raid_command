@@ -57,6 +57,7 @@ async function ensureSchema(db){
   };
 
   await ensureColumns("tokens",[
+    ["address","TEXT"],
     ["mint_address","TEXT"],
     ["ticker","TEXT"],
     ["name","TEXT"],
@@ -78,6 +79,37 @@ async function ensureSchema(db){
     ["pump_callout_url","TEXT"],
     ["telegram_group","TEXT"]
   ]);
+}
+
+
+async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
+  const info=await db.prepare("PRAGMA table_info(tokens)").all();
+  const columns=new Set((info.results||[]).map(row=>String(row.name)));
+  const fields={
+    address:mint,
+    mint_address:mint,
+    ticker:ticker||null,
+    name:name||null,
+    x_url:xUrl||null,
+    tiktok_url:tiktokUrl||null,
+    telegram_url:telegramUrl||null,
+    pump_url:"https://pump.fun/coin/"+mint,
+    dex_url:"https://dexscreener.com/solana/"+mint
+  };
+  const writable=Object.keys(fields).filter(key=>columns.has(key));
+  if(!writable.includes("mint_address")&&!writable.includes("address"))throw new Error("tokens table has no token address column");
+  const setFields=writable.filter(key=>key!=="id");
+  const setSql=setFields.map(key=>key+"=?").join(",");
+  const setValues=setFields.map(key=>fields[key]);
+  const lookupColumn=columns.has("mint_address")?"mint_address":"address";
+  const updated=await db.prepare("UPDATE tokens SET "+setSql+" WHERE "+lookupColumn+"=?").bind(...setValues,mint).run();
+  if(Number(updated.meta?.changes||0)===0){
+    const placeholders=writable.map(()=>"?").join(",");
+    await db.prepare("INSERT INTO tokens ("+writable.join(",")+") VALUES ("+placeholders+")").bind(...writable.map(key=>fields[key])).run();
+  }
+  const token=await db.prepare("SELECT id FROM tokens WHERE "+lookupColumn+"=? OR "+(lookupColumn==="mint_address"&&columns.has("address")?"address":"mint_address")+"=? LIMIT 1").bind(mint,mint).first();
+  if(!token?.id)throw new Error("Token record could not be created");
+  return token;
 }
 
 async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,name,packageName,endsAt,xUrl,tiktokUrl,telegramUrl,pumpCalloutUrl,raidCopy){
@@ -134,17 +166,7 @@ export async function onRequestPost({request,env}){
     const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
     const name=String(body.name||ticker||"Token").trim().slice(0,80);
 
-    const tokenFields=[ticker,name,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,"https://pump.fun/coin/"+mint,"https://dexscreener.com/solana/"+mint];
-    const updated=await env.DB.prepare("UPDATE tokens SET ticker=?,name=?,x_url=?,tiktok_url=?,telegram_url=?,pump_url=?,dex_url=? WHERE mint_address=?")
-      .bind(...tokenFields,mint).run();
-
-    if(Number(updated.meta?.changes||0)===0){
-      await env.DB.prepare("INSERT INTO tokens (mint_address,ticker,name,x_url,tiktok_url,telegram_url,pump_url,dex_url) VALUES (?,?,?,?,?,?,?,?)")
-        .bind(mint,...tokenFields).run();
-    }
-
-    const token=await env.DB.prepare("SELECT id FROM tokens WHERE mint_address=?").bind(mint).first();
-    if(!token?.id)return json({ok:false,error:"Token record could not be created"},500);
+    const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim()});
 
     const now=new Date();
     const ends=new Date(now.getTime()+24*3600000);
