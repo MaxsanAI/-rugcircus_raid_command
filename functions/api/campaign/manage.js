@@ -28,7 +28,7 @@ function ownerFromRequest(request){
 
 async function getOwnedCampaign(db,id,owner){
   const row=await db.prepare(
-    "SELECT c.id,c.token_id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,c.creator_wallet,c.free_user_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.id=? AND ((c.creator_wallet IS NOT NULL AND c.creator_wallet=? ) OR (c.free_user_id IS NOT NULL AND c.free_user_id=?))"
+    "SELECT c.id,c.token_id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE c.id=? AND ((COALESCE(c.creator_wallet,p.wallet_address) IS NOT NULL AND COALESCE(c.creator_wallet,p.wallet_address)=?) OR (c.free_user_id IS NOT NULL AND c.free_user_id=?))"
   ).bind(id,owner.wallet||"__none__",owner.freeUserId||"__none__").first();
   return row||null;
 }
@@ -41,12 +41,12 @@ export async function onRequestGet({request,env}){
   let rows=[];
   if(owner.wallet&&owner.freeUserId){
     const r=await env.DB.prepare(
-      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,c.creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.creator_wallet=? OR c.free_user_id=? ORDER BY c.created_at DESC LIMIT 100"
+      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE COALESCE(c.creator_wallet,p.wallet_address)=? OR c.free_user_id=? ORDER BY c.created_at DESC LIMIT 100"
     ).bind(owner.wallet,owner.freeUserId).all();
     rows=r.results||[];
   }else if(owner.wallet){
     const r=await env.DB.prepare(
-      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,c.creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.creator_wallet=? ORDER BY c.created_at DESC LIMIT 100"
+      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE COALESCE(c.creator_wallet,p.wallet_address)=? ORDER BY c.created_at DESC LIMIT 100"
     ).bind(owner.wallet).all();
     rows=r.results||[];
   }else{
