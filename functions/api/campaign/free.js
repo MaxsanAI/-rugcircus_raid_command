@@ -140,7 +140,7 @@ async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl,logoU
   return token;
 }
 
-async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,name,packageName,endsAt,xUrl,tiktokUrl,telegramUrl,pumpCalloutUrl,raidCopy){
+async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,name,packageName,endsAt,xUrl,tiktokUrl,telegramUrl,pumpCalloutUrl,raidCopy,imageUrl){
   if(!env.TELEGRAM_BOT_TOKEN)return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
   const chatId=normalizeTelegramGroup(targetGroup)||env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
   const lines=["🎪 RUGCIRCUS RAID IS LIVE","","🪙 $"+(ticker||"RUGCX")+(name?" · "+name:""),"📦 "+packageName,"⏳ Ends: "+endsAt];
@@ -167,11 +167,10 @@ async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,nam
     {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
     {text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}
   ]);
-  const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{
-    method:"POST",
-    headers:{"content-type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})
-  });
+  const caption=lines.join("\n");
+  const method=imageUrl?"sendPhoto":"sendMessage";
+  const body=imageUrl?{chat_id:chatId,photo:imageUrl,caption,reply_markup:{inline_keyboard:buttons}}:{chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true};
+  const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/"+method,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
   const data=await response.json().catch(()=>null);
   if(!response.ok||!data?.ok)return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
   return {ok:true,chatId,messageId:data.result?.message_id||null};
@@ -217,7 +216,7 @@ export async function onRequestPost({request,env}){
     const campaignId=row.meta?.last_row_id;
     if(!campaignId)return json({ok:false,error:"Campaign was not created"},500);
 
-    const telegram=await publishRaidCard(env,campaignId,telegramGroup,mint,ticker,name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
+    const telegram=await publishRaidCard(env,campaignId,telegramGroup,mint,ticker,name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl);
 
     if(!telegram.ok){
       await env.DB.prepare("UPDATE campaigns SET status='failed' WHERE id=?").bind(campaignId).run().catch(()=>{});
