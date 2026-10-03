@@ -73,11 +73,24 @@ async function ensureSchema(db){
   await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tokens_mint_address_unique ON tokens(mint_address) WHERE mint_address IS NOT NULL").run().catch(()=>{});
 
   await ensureColumns("campaigns",[
+    ["token_id","INTEGER"],
+    ["package","TEXT"],
+    ["amount_lamports","INTEGER"],
+    ["duration_hours","INTEGER"],
+    ["x_url","TEXT"],
+    ["tiktok_url","TEXT"],
+    ["telegram_url","TEXT"],
+    ["raid_copy","TEXT"],
+    ["status","TEXT DEFAULT 'pending'"],
+    ["payment_signature","TEXT"],
+    ["payout_wallet","TEXT"],
     ["creator_wallet","TEXT"],
     ["free_user_id","TEXT"],
-    ["payout_wallet","TEXT"],
     ["pump_callout_url","TEXT"],
-    ["telegram_group","TEXT"]
+    ["telegram_group","TEXT"],
+    ["starts_at","TEXT"],
+    ["ends_at","TEXT"],
+    ["created_at","TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"]
   ]);
 }
 
