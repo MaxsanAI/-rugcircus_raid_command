@@ -108,21 +108,21 @@ async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,nam
   if(raidCopy) lines.push("", "📣 "+raidCopy);
   lines.push("", "⚔️ Join the raid and hit the links below.");
   const buttons=[];
-  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=x"}]);
-  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=tiktok"}]);
-  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:"/api/raid/click?campaign="+campaignId+"&platform=telegram"}]);
-  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:"/api/raid/click?campaign="+campaignId+"&platform=callout"}]);
+  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=x"}]);
+  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=tiktok"}]);
+  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=telegram"}]);
+  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=callout"}]);
   buttons.push([
-    {text:"🪙 OPEN PUMP.FUN",url:"/api/raid/click?campaign="+campaignId+"&platform=pump"},
-    {text:"🟢 PUMP.FUN MOVERS",url:"/api/raid/click?campaign="+campaignId+"&platform=movers"}
+    {text:"🪙 OPEN PUMP.FUN",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=pump"},
+    {text:"🟢 PUMP.FUN MOVERS",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=movers"}
   ]);
   buttons.push([
-    {text:"📈 DEXSCREENER",url:"/api/raid/click?campaign="+campaignId+"&platform=dexscreener"},
-    {text:"🦅 BIRDEYE",url:"/api/raid/click?campaign="+campaignId+"&platform=birdeye"}
+    {text:"📈 DEXSCREENER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=dexscreener"},
+    {text:"🦅 BIRDEYE",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=birdeye"}
   ]);
   buttons.push([
-    {text:"🪐 JUPITER",url:"/api/raid/click?campaign="+campaignId+"&platform=jupiter"},
-    {text:"⚡ RAYDIUM",url:"/api/raid/click?campaign="+campaignId+"&platform=raydium"}
+    {text:"🪐 JUPITER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=jupiter"},
+    {text:"⚡ RAYDIUM",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=raydium"}
   ]);
   buttons.push([
     {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
