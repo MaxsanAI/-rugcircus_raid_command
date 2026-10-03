@@ -30,6 +30,7 @@ async function requireAdmin(chatId,userId,token){
 }
 
 async function sendPanel(chatId,token,appUrl){
+  const openButton={text:"🚀 Open Command Center",url:appUrl};
   return tgCall("sendMessage",token,{
     chat_id:chatId,
     text:"🎪 RUGCIRCUS COMMAND\n\nChoose an action:",
@@ -39,7 +40,7 @@ async function sendPanel(chatId,token,appUrl){
         [{text:"📣 Announce",callback_data:"announce_help"},{text:"🧹 Moderation",callback_data:"clean_help"}],
         [{text:"📌 Pin / Unpin",callback_data:"pin_help"}],
         [{text:"📊 Group Status",callback_data:"group"}],
-        [{text:"🚀 Open Command Center",web_app:{url:appUrl}}]
+        [openButton]
       ]
     }
   });
@@ -68,8 +69,9 @@ async function sendRaid(chatId,env,chatUsername){
     "",
     "🔥 Join the raid and open the Command Center."
   ];
+  const appUrl=env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev";
   const buttons=[
-    [{text:"🚀 Open Command Center",web_app:{url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}}]
+    [{text:"🚀 Open Command Center",url:appUrl}]
   ];
   const row1=[];
   if(raid?.x_url) row1.push({text:"🐦 Join X Raid",url:raid.x_url});
@@ -130,7 +132,7 @@ async function handleCommand(message,env){
       chat_id:chatId,
       text:"🎪 RUGCIRCUS COMMAND\n\n⚔️ RAID • 🪙 $RUGCX • 📣 CAMPAIGNS • 🛡️ COMMUNITY CONTROL\n\nUse /panel for admin tools or /raid for the active raid.",
       reply_markup:{inline_keyboard:[
-        [{text:"🎪 Open Command",web_app:{url:appUrl}}],
+        [{text:"🎪 Open Command",url:appUrl}],
         [{text:"⚔️ Live Raid",callback_data:"raid"},{text:"🪙 $RUGCX",callback_data:"token"}]
       ]}
     });
@@ -154,7 +156,7 @@ async function handleCommand(message,env){
       text:"🎪 $RUGCX · RUGCIRCUS\n\n🪙 Official Pump.fun token page:",
       reply_markup:{inline_keyboard:[
         [{text:"🔥 Open $RUGCX on Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}],
-        [{text:"🚀 Open Command Center",web_app:{url:appUrl}}]
+        [{text:"🚀 Open Command Center",url:appUrl}]
       ]}
     });
     return;
