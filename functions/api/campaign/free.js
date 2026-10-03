@@ -174,6 +174,11 @@ export async function onRequestPost({request,env}){
     const botCheck=await verifyBotAdmin(env,telegramGroup);
     if(!botCheck.ok)return json({ok:false,error:botCheck.error,telegram:botCheck},403);
 
+    const used=await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE free_user_id=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(clientId).first();
+    if(Number(used?.count||0)>=3){
+      return json({ok:false,error:"You have used all 3 free raids for the last 24 hours",remainingFreeRaids:0},429);
+    }
+
     const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
     const name=String(body.name||ticker||"Token").trim().slice(0,80);
 
@@ -194,7 +199,8 @@ export async function onRequestPost({request,env}){
       return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",campaignId,telegram},502);
     }
 
-    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingFreeRaids:null,telegram});
+    const remainingFreeRaids=Math.max(0,3-Number((await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE free_user_id=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(clientId).first())?.count||0));
+    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingFreeRaids,telegram});
   }catch(error){
     console.error("FREE RAID ERROR",error);
     return json({ok:false,error:String(error?.message||error||"Unknown server error")},500);
