@@ -42,15 +42,42 @@ async function ensureSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS featured_tokens (token_id INTEGER PRIMARY KEY,priority INTEGER NOT NULL DEFAULT 0,starts_at TEXT,ends_at TEXT)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS premium_operators (id INTEGER PRIMARY KEY AUTOINCREMENT,wallet_address TEXT UNIQUE NOT NULL,telegram_id TEXT,x_handle TEXT,status TEXT NOT NULL DEFAULT 'active',paid_signature TEXT UNIQUE NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
 
-  for(const column of [
+  const tableColumns=async(table)=>{
+    const result=await db.prepare("PRAGMA table_info("+table+")").all();
+    return new Set((result.results||[]).map(row=>String(row.name)));
+  };
+
+  const ensureColumns=async(table,columns)=>{
+    const existing=await tableColumns(table);
+    for(const [name,type] of columns){
+      if(!existing.has(name)){
+        await db.prepare("ALTER TABLE "+table+" ADD COLUMN "+name+" "+type).run();
+      }
+    }
+  };
+
+  await ensureColumns("tokens",[
+    ["mint_address","TEXT"],
+    ["ticker","TEXT"],
+    ["name","TEXT"],
+    ["logo_url","TEXT"],
+    ["x_url","TEXT"],
+    ["tiktok_url","TEXT"],
+    ["telegram_url","TEXT"],
+    ["pump_url","TEXT"],
+    ["dex_url","TEXT"],
+    ["created_at","TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"]
+  ]);
+
+  await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_tokens_mint_address_unique ON tokens(mint_address) WHERE mint_address IS NOT NULL").run().catch(()=>{});
+
+  await ensureColumns("campaigns",[
     ["creator_wallet","TEXT"],
     ["free_user_id","TEXT"],
     ["payout_wallet","TEXT"],
     ["pump_callout_url","TEXT"],
     ["telegram_group","TEXT"]
-  ]){
-    await db.prepare("ALTER TABLE campaigns ADD COLUMN "+column[0]+" "+column[1]).run().catch(()=>{});
-  }
+  ]);
 }
 
 async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,name,packageName,endsAt,xUrl,tiktokUrl,telegramUrl,pumpCalloutUrl,raidCopy){
