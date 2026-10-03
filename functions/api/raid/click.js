@@ -19,9 +19,35 @@ export async function onRequestGet({request,env}){
       const user=await env.DB.prepare("SELECT id FROM users WHERE wallet_address=?").bind(wallet).first().catch(()=>null);
       userId=user?.id||null;
     }
-    await env.DB.prepare("INSERT INTO raid_actions (campaign_id,user_id,platform,action_type,external_url) VALUES (?,?,?,?,?)").bind(campaignId,userId,platform,"click",row.target).run();
+    // Analytics must never block the actual raid link. Older D1 databases may
+    // have a legacy raid_actions schema, so create/migrate it before recording.
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS raid_actions (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,user_id INTEGER,platform TEXT NOT NULL,action_type TEXT NOT NULL,external_url TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
+    const info=await env.DB.prepare("PRAGMA table_info(raid_actions)").all().catch(()=>({results:[]}));
+    const columns=new Set((info.results||[]).map(row=>String(row.name)));
+    const required=[
+      ["campaign_id","INTEGER"],
+      ["user_id","INTEGER"],
+      ["platform","TEXT"],
+      ["action_type","TEXT"],
+      ["external_url","TEXT"],
+      ["created_at","TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"]
+    ];
+    for(const [name,type] of required){
+      if(!columns.has(name))await env.DB.prepare("ALTER TABLE raid_actions ADD COLUMN "+name+" "+type).run().catch(()=>{});
+    }
+    // Never turn a valid X/Telegram/TikTok/Pump link into a JSON error just
+    // because analytics logging failed.
+    await env.DB.prepare("INSERT INTO raid_actions (campaign_id,user_id,platform,action_type,external_url) VALUES (?,?,?,?,?)")
+      .bind(campaignId,userId,platform,"click",row.target).run().catch(error=>console.error("RAID ACTION LOG ERROR",error));
     return Response.redirect(row.target,302);
   }catch(error){
-    return json({ok:false,error:"Could not record raid action"},500);
+    console.error("RAID CLICK ERROR",error);
+    // The destination is still the important part: redirect even if D1
+    // analytics has a temporary/schema problem.
+    try{
+      const fallback=await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=?").bind(campaignId).first();
+      if(fallback?.target)return Response.redirect(fallback.target,302);
+    }catch{}
+    return json({ok:false,error:"Campaign link is unavailable"},502);
   }
 }
