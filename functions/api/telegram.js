@@ -70,18 +70,18 @@ async function sendRaid(chatId,env,chatUsername){
     "🔥 Join the raid and open the Command Center."
   ];
   const appUrl=env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev";
-  const buttons=[
-    [{text:"🚀 Open Command Center",url:appUrl}]
-  ];
-  const row1=[];
-  if(raid?.x_url) row1.push({text:"🐦 Join X Raid",url:raid.x_url});
-  if(raid?.tiktok_url) row1.push({text:"🎵 Join TikTok Raid",url:raid.tiktok_url});
-  if(row1.length) buttons.unshift(row1);
-  const row2=[];
-  if(raid?.telegram_url) row2.push({text:"💬 Telegram",url:raid.telegram_url});
-  if(raid?.mint_address) row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+raid.mint_address});
-  if(row2.length) buttons.splice(buttons.length-1,0,row2);
-  if(raid?.pump_callout_url) buttons.splice(buttons.length-1,0,[{text:"📣 PUMP CALL OUT",url:raid.pump_callout_url}]);
+  const buttons=[];
+  if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:raid.x_url}]);
+  if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:raid.tiktok_url}]);
+  if(raid?.telegram_url) buttons.push([{text:"✈️ TELEGRAM RAID",url:raid.telegram_url}]);
+  if(raid?.pump_callout_url) buttons.push([{text:"🎯 PUMP CALLOUT",url:raid.pump_callout_url}]);
+  if(raid?.mint_address) buttons.push([{text:"🪙 OPEN PUMP.FUN",url:"https://pump.fun/coin/"+raid.mint_address}]);
+  buttons.push([{text:"🟢 PUMP.FUN MOVERS",url:"https://pump.fun/explore"}]);
+  buttons.push([{text:"📈 DEXSCREENER",url:"https://dexscreener.com/solana"}]);
+  buttons.push([{text:"🦅 BIRDEYE",url:"https://birdeye.so/"}]);
+  buttons.push([{text:"🪐 JUPITER",url:"https://jup.ag/"}]);
+  buttons.push([{text:"⚡ RAYDIUM",url:"https://raydium.io/"}]);
+  buttons.push([{text:"🚀 OPEN COMMAND CENTER",url:appUrl}]);
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
 }
 
