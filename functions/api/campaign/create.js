@@ -24,9 +24,44 @@ async function verifyPayment(signature,recipient,lamports){
 }
 async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
+  await db.prepare("ALTER TABLE tokens ADD COLUMN address TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
 }
+
+async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
+  const info=await db.prepare("PRAGMA table_info(tokens)").all();
+  const columns=new Set((info.results||[]).map(row=>String(row.name)));
+  const fields={
+    address:mint,
+    mint_address:mint,
+    ticker:ticker||null,
+    name:name||null,
+    x_url:xUrl||null,
+    tiktok_url:tiktokUrl||null,
+    telegram_url:telegramUrl||null,
+    pump_url:"https://pump.fun/coin/"+mint,
+    dex_url:"https://dexscreener.com/solana/"+mint
+  };
+  const writable=Object.keys(fields).filter(key=>columns.has(key));
+  if(!writable.includes("mint_address")&&!writable.includes("address"))throw new Error("tokens table has no token address column");
+  const setFields=writable.filter(key=>key!=="id");
+  const setSql=setFields.map(key=>key+"=?").join(",");
+  const setValues=setFields.map(key=>fields[key]);
+  const lookupColumn=columns.has("mint_address")?"mint_address":"address";
+  const updated=await db.prepare("UPDATE tokens SET "+setSql+" WHERE "+lookupColumn+"=?").bind(...setValues,mint).run();
+  if(Number(updated.meta?.changes||0)===0){
+    const placeholders=writable.map(()=>"?").join(",");
+    await db.prepare("INSERT INTO tokens ("+writable.join(",")+") VALUES ("+placeholders+")").bind(...writable.map(key=>fields[key])).run();
+  }
+  const alternate=lookupColumn==="mint_address"&&columns.has("address")?"address":"mint_address";
+  const token=columns.has(alternate)
+    ? await db.prepare("SELECT id FROM tokens WHERE "+lookupColumn+"=? OR "+alternate+"=? LIMIT 1").bind(mint,mint).first()
+    : await db.prepare("SELECT id FROM tokens WHERE "+lookupColumn+"=? LIMIT 1").bind(mint).first();
+  if(!token?.id)throw new Error("Token record could not be created");
+  return token;
+}
+
 function normalizeTelegramGroup(value){const raw=String(value||"").trim();if(!raw)return "";if(/^-100\d+$/.test(raw)||/^-\d+$/.test(raw))return raw;const match=raw.match(/(?:https?:\/\/)?t\.me\/([A-Za-z0-9_]{5,})/i);if(match)return "@"+match[1];return raw.startsWith("@")?raw:"@"+raw;}
 async function tgCall(method,token,body){const response=await fetch("https://api.telegram.org/bot"+token+"/"+method,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const data=await response.json().catch(()=>null);return {ok:response.ok&&data?.ok===true,data};}
 async function verifyBotAdmin(env,targetGroup){
@@ -83,8 +118,7 @@ export async function onRequestPost({request,env}){
   if(!payment.ok) return json(payment,400);
   const existing=await env.DB.prepare("SELECT id FROM payments WHERE signature=?").bind(signature).first();
   if(existing) return json({ok:false,error:"This transaction has already been used"},409);
-  const tokenInsert=await env.DB.prepare("INSERT INTO tokens (mint_address,ticker,name,x_url,tiktok_url,telegram_url,pump_url,dex_url) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(mint_address) DO UPDATE SET ticker=excluded.ticker,name=excluded.name,x_url=excluded.x_url,tiktok_url=excluded.tiktok_url,telegram_url=excluded.telegram_url,pump_url=excluded.pump_url,dex_url=excluded.dex_url").bind(mint,ticker,name,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,"https://pump.fun/coin/"+mint,"https://dexscreener.com/solana/"+mint).run();
-  const token=await env.DB.prepare("SELECT id FROM tokens WHERE mint_address=?").bind(mint).first();
+  const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim()});
   const now=new Date();
   const ends=new Date(now.getTime()+pack.hours*3600000);
   const campaign=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payment_signature,payout_wallet,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,String(body.package).toUpperCase(),pack.lamports,pack.hours,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",signature,payoutWallet,telegramGroup,now.toISOString(),ends.toISOString()).run();
