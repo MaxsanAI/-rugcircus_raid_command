@@ -42,9 +42,9 @@ async function ensureSchema(db){
 
 async function resolveRaidImage(imageUrl,xUrl){
   const direct=String(imageUrl||"").trim();
-  if(/^https?:\\/\\//i.test(direct))return direct.slice(0,2000);
+  if(/^https?:\/\//i.test(direct))return direct.slice(0,2000);
   const x=String(xUrl||"").trim();
-  if(!/^https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\//i.test(x))return null;
+  if(!/^https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\//i.test(x))return null;
   try{
     const r=await fetch(x,{headers:{"user-agent":"Mozilla/5.0 RUGCIRCUS Raid Preview"}});
     const html=await r.text();
