@@ -2,7 +2,7 @@ function json(data,status=200){return new Response(JSON.stringify(data),{status,
 
 async function ensureSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_members (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,wallet_address TEXT NOT NULL,member_token TEXT NOT NULL UNIQUE,points INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-  await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_views (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,campaign_id INTEGER NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(member_id,campaign_id))").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_views (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,campaign_id INTEGER NOT NULL,viewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_leaderboard_views_member ON leaderboard_views(member_id,viewed_at)").run();
 }
 
@@ -26,7 +26,7 @@ export async function onRequestPost({request,env}){
     if(Number(inserted?.changes||0)>0){
       await env.DB.prepare("UPDATE leaderboard_members SET points=points+1 WHERE id=?").bind(member.id).run();
     }
-    const updated=await env.DB.prepare("SELECT points FROM leaderboard_members WHERE id=?").bind(member.id).first();
+    const updated=await env.DB.prepare("SELECT COUNT(*) AS points FROM leaderboard_views WHERE member_id=? AND viewed_at>=datetime('now','-7 days')").bind(member.id).first();
     return json({ok:true,awarded:Number(inserted?.changes||0)>0,points:Number(updated?.points||0)});
   }catch(error){
     console.error("LEADERBOARD VIEW ERROR",error);
