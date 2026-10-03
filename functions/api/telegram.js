@@ -31,7 +31,7 @@ async function requireAdmin(chatId,userId,token){
 }
 
 async function sendPanel(chatId,token,appUrl){
-  const openButton={text:"🚀 Open App",web_app:{url:"https://raidrugcircus.pulserapp.com/"}};
+  const openButton={text:"🚀 Open App",web_app:{url:(appUrl||"https://raidrugcircus.pulserapp.com").replace(/\/+$/,"")+"/"}};
   return tgCall("sendMessage",token,{
     chat_id:chatId,
     text:"🎪 RUGCIRCUS COMMAND\n\nChoose an action:",
@@ -70,20 +70,20 @@ async function sendRaid(chatId,env,chatUsername){
     "",
     "🔥 Join the raid and open the Command Center."
   ];
-  const appUrl=env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com";
+  const appUrl=(env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com").replace(/\/+$/,"");
   const buttons=[];
-  if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=x"}]);
-  if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=tiktok"}]);
-  if(raid?.telegram_url) buttons.push([{text:"✈️ TELEGRAM RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=telegram"}]);
-  if(raid?.pump_callout_url) buttons.push([{text:"🎯 PUMP CALLOUT",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=callout"}]);
-  if(raid?.mint_address) buttons.push([{text:"🪙 OPEN PUMP.FUN",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=pump"}]);
-  buttons.push([{text:"🟢 PUMP.FUN MOVERS",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=movers"}]);
-  buttons.push([{text:"📈 DEXSCREENER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=dexscreener"}]);
-  buttons.push([{text:"🦅 BIRDEYE",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=birdeye"}]);
-  buttons.push([{text:"🪐 JUPITER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=jupiter"}]);
-  buttons.push([{text:"⚡ RAYDIUM",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+raid.id+"&platform=raydium"}]);
+  if(raid?.x_url) buttons.push([{text:"𝕏 X RAID",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=x"}]);
+  if(raid?.tiktok_url) buttons.push([{text:"🎵 TIKTOK RAID",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=tiktok"}]);
+  if(raid?.telegram_url) buttons.push([{text:"✈️ TELEGRAM RAID",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=telegram"}]);
+  if(raid?.pump_callout_url) buttons.push([{text:"🎯 PUMP CALLOUT",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=callout"}]);
+  if(raid?.mint_address) buttons.push([{text:"🪙 OPEN PUMP.FUN",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=pump"}]);
+  buttons.push([{text:"🟢 PUMP.FUN MOVERS",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=movers"}]);
+  buttons.push([{text:"📈 DEXSCREENER",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=dexscreener"}]);
+  buttons.push([{text:"🦅 BIRDEYE",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=birdeye"}]);
+  buttons.push([{text:"🪐 JUPITER",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=jupiter"}]);
+  buttons.push([{text:"⚡ RAYDIUM",url:appUrl+"/api/raid/click?campaign="+raid.id+"&platform=raydium"}]);
   buttons.push([{text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"}]);
-  buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}]);
+  buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:appUrl+"/"}}]);
   const caption=lines.join("\n");
   if(raid?.logo_url){
     const image=await prepareTelegramImage(raid.logo_url);
@@ -148,7 +148,7 @@ async function handleCommand(message,env){
       chat_id:chatId,
       text:"🎪 RUGCIRCUS COMMAND\n\n⚔️ RAID • 🪙 $RUGCX • 📣 CAMPAIGNS • 🛡️ COMMUNITY CONTROL\n\nUse /panel for admin tools or /raid for the active raid.",
       reply_markup:{inline_keyboard:[
-        [{text:"🚀 Open App",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}],
+        [{text:"🚀 Open App",web_app:{url:appUrl+"/"}}],
         [{text:"⚔️ Live Raid",callback_data:"raid"},{text:"🪙 $RUGCX",callback_data:"token"}]
       ]}
     });
@@ -172,7 +172,7 @@ async function handleCommand(message,env){
       text:"🎪 $RUGCX · RUGCIRCUS\n\n🪙 Official Pump.fun token page:",
       reply_markup:{inline_keyboard:[
         [{text:"🔥 Open $RUGCX on Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}],
-        [{text:"🚀 Open App",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}]
+        [{text:"🚀 Open App",web_app:{url:appUrl+"/"}}]
       ]}
     });
     return;
