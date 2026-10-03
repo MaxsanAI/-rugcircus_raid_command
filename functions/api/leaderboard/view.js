@@ -26,7 +26,6 @@ export async function onRequestPost({request,env}){
     if(Number(inserted?.changes||0)>0){
       await env.DB.prepare("UPDATE leaderboard_members SET points=points+1 WHERE id=?").bind(member.id).run();
     }
-    const updated=await env.DB.prepare("SELECT COUNT(*) AS points FROM leaderboard_views WHERE member_id=? AND viewed_at>=datetime('now','-7 days')").bind(member.id).first();
     const current=await env.DB.prepare("SELECT points FROM leaderboard_members WHERE id=?").bind(member.id).first();
     return json({ok:true,awarded:Number(inserted?.changes||0)>0,points:Number(current?.points||0)});
   }catch(error){
