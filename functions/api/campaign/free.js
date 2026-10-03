@@ -200,7 +200,7 @@ export async function onRequestPost({request,env}){
 
     const clientId=String(body.clientId||"").trim();
     const mint=String(body.mintAddress||"").trim();
-    const telegramGroup=normalizeTelegramGroup(env.TELEGRAM_RAID_CHAT_ID||"@rugcxx")||"@rugcxx";
+    const telegramGroup=normalizeTelegramGroup(body.telegramGroup)||normalizeTelegramGroup(env.TELEGRAM_RAID_CHAT_ID)||"@rugcxx";
 
     if(!/^[A-Za-z0-9_-]{16,128}$/.test(clientId)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)){
       return json({ok:false,error:"Valid free-user ID and mint are required"},400);
