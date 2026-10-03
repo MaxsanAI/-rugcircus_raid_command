@@ -4,7 +4,7 @@ const USERNAME_RE=/^[A-Za-z0-9_]{3,32}$/;
 
 async function ensureSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_members (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,wallet_address TEXT NOT NULL,member_token TEXT NOT NULL UNIQUE,points INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-  await db.prepare("CREATE INDEX IF NOT EXISTS idx_leaderboard_points ON leaderboard_members(points DESC,created_at ASC)").run();
+  await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_username_lower ON leaderboard_members(lower(username))").run();
 }
 
 export async function onRequestPost({request,env}){
