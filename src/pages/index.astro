@@ -142,9 +142,19 @@ async function transfer(lamports,to,address=null){
   if(!Number.isSafeInteger(Number(lamports))||Number(lamports)<=0){toast("Invalid payment amount");return null}
   let recipient;
   try{recipient=new solanaWeb3.PublicKey(to)}catch{toast("Payment recipient is invalid");return null}
-  const connection=new solanaWeb3.Connection("https://api.mainnet-beta.solana.com","confirmed");
+  const rpcEndpoints=["https://solana-rpc.publicnode.com","https://api.mainnet-beta.solana.com"];
   try{
-    const {blockhash,lastValidBlockHeight}=await connection.getLatestBlockhash("confirmed");
+    let connection=null, latest=null, lastError=null;
+    for(const rpc of rpcEndpoints){
+      try{
+        const candidate=new solanaWeb3.Connection(rpc,"confirmed");
+        latest=await candidate.getLatestBlockhash("confirmed");
+        connection=candidate;
+        break;
+      }catch(e){lastError=e}
+    }
+    if(!connection||!latest)throw new Error("Solana RPC access failed. Please try again in a moment.");
+    const {blockhash,lastValidBlockHeight}=latest;
     const tx=new solanaWeb3.Transaction({
       feePayer:new solanaWeb3.PublicKey(from),
       recentBlockhash:blockhash
