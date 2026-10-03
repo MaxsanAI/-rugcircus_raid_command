@@ -156,7 +156,7 @@ async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,nam
   row2.push({text:"🪙 PUMP.FUN",url:"https://pump.fun/coin/"+(mintAddress||env.RUGCX_MINT||"3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump")});
   buttons.push(row2);
   if(pumpCalloutUrl)buttons.push([{text:"📣 PUMP CALL OUT",url:pumpCalloutUrl}]);
-  buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",url:env.PUBLIC_APP_URL||"https://rugcircus-raid-command.pages.dev"}]);
+  buttons.push([{text:"🎪 OPEN RUGCIRCUS COMMAND",url:env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com"}]);
   const response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{
     method:"POST",
     headers:{"content-type":"application/json"},
