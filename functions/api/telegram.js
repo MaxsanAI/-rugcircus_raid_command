@@ -53,7 +53,7 @@ async function activeRaid(env,chatId,chatUsername){
     const username=chatUsername?"@"+String(chatUsername).replace(/^@/,""):"";
     const configured=String(env.TELEGRAM_RAID_CHAT_ID||"@rugcxx").trim();
     return await env.DB.prepare(
-      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,t.ticker,t.name,t.mint_address,t.pump_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR datetime(c.ends_at)>datetime('now')) AND (c.telegram_group=? OR c.telegram_group=? OR c.telegram_group=?) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
+      "SELECT c.id,c.package,c.duration_hours,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,t.ticker,t.name,t.mint_address,t.pump_url,t.logo_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.status='active' AND (c.ends_at IS NULL OR datetime(c.ends_at)>datetime('now')) AND (c.telegram_group=? OR c.telegram_group=? OR c.telegram_group=?) ORDER BY c.starts_at DESC,c.id DESC LIMIT 1"
     ).bind(groupId,username,configured).first();
   }catch{return null}
 }
@@ -83,7 +83,9 @@ async function sendRaid(chatId,env,chatUsername){
   buttons.push([{text:"⚡ RAYDIUM",url:"https://raydium.io/"}]);
   buttons.push([{text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"}]);
   buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:"https://raidrugcircus.pulserapp.com/"}}]);
-  return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
+  const caption=lines.join("\n");
+  if(raid?.logo_url)return tgCall("sendPhoto",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,photo:raid.logo_url,caption,reply_markup:{inline_keyboard:buttons}});
+  return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons}});
 }
 
 function parseDuration(value){
