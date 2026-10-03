@@ -134,8 +134,14 @@ export async function onRequestPost({request,env}){
     const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
     const name=String(body.name||ticker||"Token").trim().slice(0,80);
 
-    await env.DB.prepare("INSERT INTO tokens (mint_address,ticker,name,x_url,tiktok_url,telegram_url,pump_url,dex_url) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(mint_address) DO UPDATE SET ticker=excluded.ticker,name=excluded.name,x_url=excluded.x_url,tiktok_url=excluded.tiktok_url,telegram_url=excluded.telegram_url,pump_url=excluded.pump_url,dex_url=excluded.dex_url")
-      .bind(mint,ticker,name,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,"https://pump.fun/coin/"+mint,"https://dexscreener.com/solana/"+mint).run();
+    const tokenFields=[ticker,name,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,"https://pump.fun/coin/"+mint,"https://dexscreener.com/solana/"+mint];
+    const updated=await env.DB.prepare("UPDATE tokens SET ticker=?,name=?,x_url=?,tiktok_url=?,telegram_url=?,pump_url=?,dex_url=? WHERE mint_address=?")
+      .bind(...tokenFields,mint).run();
+
+    if(Number(updated.meta?.changes||0)===0){
+      await env.DB.prepare("INSERT INTO tokens (mint_address,ticker,name,x_url,tiktok_url,telegram_url,pump_url,dex_url) VALUES (?,?,?,?,?,?,?,?)")
+        .bind(mint,...tokenFields).run();
+    }
 
     const token=await env.DB.prepare("SELECT id FROM tokens WHERE mint_address=?").bind(mint).first();
     if(!token?.id)return json({ok:false,error:"Token record could not be created"},500);
