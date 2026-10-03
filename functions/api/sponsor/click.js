@@ -15,8 +15,8 @@ export async function onRequestGet({request,env}){
       await ensureSchema(env.DB);
       const member=await env.DB.prepare("SELECT id FROM leaderboard_members WHERE member_token=?").bind(token).first();
       if(member){
-        const recent=await env.DB.prepare("SELECT id FROM leaderboard_sponsor_opens WHERE member_id=? AND opened_at>=datetime('now','-24 hours') LIMIT 1").bind(member.id).first();
-        if(!recent){
+        const recent=await env.DB.prepare("SELECT COUNT(*) AS count FROM leaderboard_sponsor_opens WHERE member_id=? AND opened_at>=datetime('now','-24 hours')").bind(member.id).first();
+        if(Number(recent?.count||0)<3){
           await env.DB.prepare("INSERT INTO leaderboard_sponsor_opens (member_id) VALUES (?)").bind(member.id).run();
           await env.DB.prepare("UPDATE leaderboard_members SET points=points+2 WHERE id=?").bind(member.id).run();
         }
