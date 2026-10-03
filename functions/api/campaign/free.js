@@ -96,7 +96,20 @@ async function ensureSchema(db){
 }
 
 
-async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
+async function resolveRaidImage(imageUrl,xUrl){
+  const direct=String(imageUrl||"").trim();
+  if(/^https?:\\/\\//i.test(direct))return direct.slice(0,2000);
+  const x=String(xUrl||"").trim();
+  if(!/^https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\//i.test(x))return null;
+  try{
+    const r=await fetch(x,{headers:{"user-agent":"Mozilla/5.0 RUGCIRCUS Raid Preview"}});
+    const html=await r.text();
+    const match=html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i)||html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+    return match?.[1]?match[1].replace(/&amp;/g,"&").slice(0,2000):null;
+  }catch{return null}
+}
+
+async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl,logoUrl}){
   const info=await db.prepare("PRAGMA table_info(tokens)").all();
   const columns=new Set((info.results||[]).map(row=>String(row.name)));
   const fields={
@@ -107,6 +120,7 @@ async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl}){
     x_url:xUrl||null,
     tiktok_url:tiktokUrl||null,
     telegram_url:telegramUrl||null,
+    logo_url:logoUrl||null,
     pump_url:"https://pump.fun/coin/"+mint,
     dex_url:"https://dexscreener.com/solana/"+mint
   };
@@ -182,7 +196,8 @@ export async function onRequestPost({request,env}){
     const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
     const name=String(body.name||ticker||"Token").trim().slice(0,80);
 
-    const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim()});
+    const logoUrl=await resolveRaidImage(body.imageUrl,body.xUrl);
+    const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim(),logoUrl});
 
     const now=new Date();
     const ends=new Date(now.getTime()+24*3600000);
