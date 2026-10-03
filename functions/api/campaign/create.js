@@ -23,8 +23,16 @@ async function verifyPayment(signature,recipient,lamports){
   return {ok:true,receivedLamports:received};
 }
 async function ensureSchema(db){
+  await db.prepare("CREATE TABLE IF NOT EXISTS tokens (id INTEGER PRIMARY KEY AUTOINCREMENT,mint_address TEXT UNIQUE NOT NULL,ticker TEXT,name TEXT,logo_url TEXT,x_url TEXT,tiktok_url TEXT,telegram_url TEXT,pump_url TEXT,dex_url TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS campaigns (id INTEGER PRIMARY KEY AUTOINCREMENT,token_id INTEGER NOT NULL,package TEXT NOT NULL,amount_lamports INTEGER NOT NULL,duration_hours INTEGER NOT NULL,x_url TEXT,tiktok_url TEXT,telegram_url TEXT,raid_copy TEXT,status TEXT NOT NULL DEFAULT 'pending',payment_signature TEXT,payout_wallet TEXT,creator_wallet TEXT,free_user_id TEXT,pump_callout_url TEXT,telegram_group TEXT,starts_at TEXT,ends_at TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  const tokenColumns=await db.prepare("PRAGMA table_info(tokens)").all();
+  const existingTokens=new Set((tokenColumns.results||[]).map(row=>String(row.name)));
+  for(const [name,type] of [["address","TEXT"],["mint_address","TEXT"],["ticker","TEXT"],["name","TEXT"],["logo_url","TEXT"],["x_url","TEXT"],["tiktok_url","TEXT"],["telegram_url","TEXT"],["pump_url","TEXT"],["dex_url","TEXT"],["created_at","TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"]]){
+    if(!existingTokens.has(name))await db.prepare("ALTER TABLE tokens ADD COLUMN "+name+" "+type).run();
+  }
   await db.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
-  await db.prepare("ALTER TABLE tokens ADD COLUMN address TEXT").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN free_user_id TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
 }
