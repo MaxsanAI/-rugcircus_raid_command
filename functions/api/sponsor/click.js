@@ -9,7 +9,7 @@ export async function onRequestGet({request,env}){
   const url=new URL(request.url);
   const token=String(url.searchParams.get("memberToken")||"").trim();
   const target=String(env.MONETAG_SMARTLINK||"https://omg10.com/4/11941511").trim();
-  if(!/^https?:\\/\\//.test(target))return json({ok:false,error:"Sponsor offer is not configured"},500);
+  if(!/^https?:\/\//.test(target))return json({ok:false,error:"Sponsor offer is not configured"},500);
   try{
     if(env.DB&&token){
       await ensureSchema(env.DB);
