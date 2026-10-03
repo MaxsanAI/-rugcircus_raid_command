@@ -28,6 +28,18 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
 }
 function normalizeTelegramGroup(value){const raw=String(value||"").trim();if(!raw)return "";if(/^-100\d+$/.test(raw)||/^-\d+$/.test(raw))return raw;const match=raw.match(/(?:https?:\/\/)?t\.me\/([A-Za-z0-9_]{5,})/i);if(match)return "@"+match[1];return raw.startsWith("@")?raw:"@"+raw;}
+async function tgCall(method,token,body){const response=await fetch("https://api.telegram.org/bot"+token+"/"+method,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const data=await response.json().catch(()=>null);return {ok:response.ok&&data?.ok===true,data};}
+async function verifyBotAdmin(env,targetGroup){
+  if(!env.TELEGRAM_BOT_TOKEN)return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
+  const chatId=normalizeTelegramGroup(targetGroup)||"@rugcxx";
+  const me=await tgCall("getMe",env.TELEGRAM_BOT_TOKEN,{});
+  if(!me.ok||!me.data?.result?.id)return {ok:false,error:"Telegram bot identity could not be verified"};
+  const member=await tgCall("getChatMember",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,user_id:me.data.result.id});
+  if(!member.ok)return {ok:false,error:member.data?.description||"Telegram bot is not a member of the raid group",chatId};
+  const status=member.data?.result?.status;
+  if(status!=="administrator"&&status!=="creator")return {ok:false,error:"RUGCIRCUS bot must be an administrator in the raid group before launching a raid",chatId,status:status||"unknown"};
+  return {ok:true,chatId,status};
+}
 async function publishRaidCard(env, campaignId, targetGroup, mintAddress, ticker, name, packageName, endsAt, xUrl, tiktokUrl, telegramUrl, pumpCalloutUrl, raidCopy){
   if(!env.TELEGRAM_BOT_TOKEN) return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
   const chatId=normalizeTelegramGroup(targetGroup)||env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
@@ -59,9 +71,11 @@ export async function onRequestPost({request,env}){
   const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
   const name=String(body.name||ticker||"Token").trim().slice(0,80);
   const payoutWallet=String(body.payoutWallet||env.PUBLIC_TREASURY_WALLET).trim();
-  const telegramGroup=normalizeTelegramGroup(body.telegramGroup);
+  const telegramGroup=normalizeTelegramGroup(body.telegramGroup)||normalizeTelegramGroup(env.TELEGRAM_RAID_CHAT_ID)||"@rugcxx";
   if(!pack||!signature||!mint||!payoutWallet||!telegramGroup) return json({ok:false,error:"package, signature, mintAddress, payoutWallet and Telegram group are required"},400);
   if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)||!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(payoutWallet)) return json({ok:false,error:"Invalid Solana address"},400);
+  const botCheck=await verifyBotAdmin(env,telegramGroup);
+  if(!botCheck.ok)return json({ok:false,error:botCheck.error,telegram:botCheck},403);
   await ensureSchema(env.DB);
   const premium=await env.DB.prepare("SELECT wallet_address,expires_at FROM premium_operators WHERE wallet_address=? AND status='active' AND expires_at>CURRENT_TIMESTAMP").bind(payoutWallet).first().catch(()=>null);
   if(payoutWallet!==env.PUBLIC_TREASURY_WALLET&&!premium) return json({ok:false,error:"This payout wallet requires an active Premium Operator plan"},403);
@@ -76,5 +90,9 @@ export async function onRequestPost({request,env}){
   const campaign=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payment_signature,payout_wallet,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,String(body.package).toUpperCase(),pack.lamports,pack.hours,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",signature,payoutWallet,telegramGroup,now.toISOString(),ends.toISOString()).run();
   await env.DB.prepare("INSERT INTO payments (campaign_id,signature,wallet_address,lamports,status,verified_at) VALUES (?,?,?,?,?,?)").bind(campaign.meta.last_row_id,signature,String(body.payerWallet||"").trim()||null,pack.lamports,"verified",now.toISOString()).run();
   const telegram=await publishRaidCard(env,campaign.meta.last_row_id,telegramGroup,mint,ticker,name,String(body.package).toUpperCase(),ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim());
+  if(!telegram.ok){
+    await env.DB.prepare("UPDATE campaigns SET status='failed' WHERE id=?").bind(campaign.meta.last_row_id).run().catch(()=>{});
+    return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",campaignId:campaign.meta.last_row_id,receivedLamports:payment.receivedLamports,telegram},502);
+  }
   return json({ok:true,campaignId:campaign.meta.last_row_id,endsAt:ends.toISOString(),receivedLamports:payment.receivedLamports,telegram});
 }
