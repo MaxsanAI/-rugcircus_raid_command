@@ -133,7 +133,7 @@ async function handleCommand(message,env){
   const text=message.text||"";
   const cmd=commandOf(text);
   const args=commandArgs(text);
-  const appUrl=env.PUBLIC_APP_URL||"https://raidrugcircus.pulserapp.com";
+  const appUrl=APP_URL;
   const group=message.chat.type==="group"||message.chat.type==="supergroup";
   const adminCommands=new Set(["/panel","/announce","/pin","/unpin","/clean","/ban","/unban","/mute","/unmute"]);
 
