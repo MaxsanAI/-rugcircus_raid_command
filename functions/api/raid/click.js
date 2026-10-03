@@ -1,5 +1,6 @@
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
-const PLATFORMS={x:"x_url",tiktok:"tiktok_url",telegram:"telegram_url",callout:"pump_callout_url"};
+const PLATFORMS={x:"x_url",tiktok:"tiktok_url",telegram:"telegram_url",callout:"pump_callout_url",pump:"pump_url",movers:null,dexscreener:null,birdeye:null,jupiter:null,raydium:null};
+const FIXED_TARGETS={movers:"https://pump.fun/explore",dexscreener:"https://dexscreener.com/solana",birdeye:"https://birdeye.so/",jupiter:"https://jup.ag/",raydium:"https://raydium.io/"};
 const WALLET_RE=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 export async function onRequestGet({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
@@ -7,12 +8,14 @@ export async function onRequestGet({request,env}){
   const campaignId=Number(url.searchParams.get("campaign"));
   const platform=String(url.searchParams.get("platform")||"").toLowerCase();
   const column=PLATFORMS[platform];
+  const fixedTarget=FIXED_TARGETS[platform]||"";
   const wallet=String(url.searchParams.get("wallet")||"").trim();
-  if(!Number.isInteger(campaignId)||campaignId<1||!column)return json({ok:false,error:"Invalid campaign or platform"},400);
+  if(!Number.isInteger(campaignId)||campaignId<1||(!column&&!fixedTarget))return json({ok:false,error:"Invalid campaign or platform"},400);
   try{
     await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
-    const row=await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=? AND status='active' AND (ends_at IS NULL OR datetime(ends_at)>datetime('now'))").bind(campaignId).first();
-    if(!row?.target)return json({ok:false,error:"Campaign link is not active"},404);
+    const row=await env.DB.prepare("SELECT t.mint_address"+(column?", c."+column+" AS target":"")+" FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.id=? AND c.status='active' AND (c.ends_at IS NULL OR datetime(c.ends_at)>datetime('now'))").bind(campaignId).first();
+    const target=fixedTarget||(platform==="pump"&&row?.mint_address?"https://pump.fun/coin/"+row.mint_address:row?.target);
+    if(!target)return json({ok:false,error:"Campaign link is not active"},404);
     let userId=null;
     if(WALLET_RE.test(wallet)){
       await env.DB.prepare("INSERT INTO users (wallet_address) VALUES (?) ON CONFLICT(wallet_address) DO NOTHING").bind(wallet).run().catch(()=>{});
@@ -38,14 +41,14 @@ export async function onRequestGet({request,env}){
     // Never turn a valid X/Telegram/TikTok/Pump link into a JSON error just
     // because analytics logging failed.
     await env.DB.prepare("INSERT INTO raid_actions (campaign_id,user_id,platform,action_type,external_url) VALUES (?,?,?,?,?)")
-      .bind(campaignId,userId,platform,"click",row.target).run().catch(error=>console.error("RAID ACTION LOG ERROR",error));
-    return Response.redirect(row.target,302);
+       .bind(campaignId,userId,platform,"click",target).run().catch(error=>console.error("RAID ACTION LOG ERROR",error));
+    return Response.redirect(target,302);
   }catch(error){
     console.error("RAID CLICK ERROR",error);
     // The destination is still the important part: redirect even if D1
     // analytics has a temporary/schema problem.
     try{
-      const fallback=await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=?").bind(campaignId).first();
+      const fallback=fixedTarget?{target:fixedTarget}:await env.DB.prepare("SELECT "+column+" AS target FROM campaigns WHERE id=?").bind(campaignId).first();
       if(fallback?.target)return Response.redirect(fallback.target,302);
     }catch{}
     return json({ok:false,error:"Campaign link is unavailable"},502);
