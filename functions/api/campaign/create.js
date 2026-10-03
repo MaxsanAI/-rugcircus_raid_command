@@ -30,6 +30,8 @@ async function ensureSchema(db){
   for(const [name,type] of [["address","TEXT"],["mint_address","TEXT"],["ticker","TEXT"],["name","TEXT"],["logo_url","TEXT"],["x_url","TEXT"],["tiktok_url","TEXT"],["telegram_url","TEXT"],["pump_url","TEXT"],["dex_url","TEXT"],["created_at","TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"]]){
     if(!existingTokens.has(name))await db.prepare("ALTER TABLE tokens ADD COLUMN "+name+" "+type).run();
   }
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN amount_lamports INTEGER").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN duration_hours INTEGER").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN payout_wallet TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN creator_wallet TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN free_user_id TEXT").run().catch(()=>{});
