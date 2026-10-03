@@ -162,7 +162,8 @@ document.getElementById("openPremiumButton")?.addEventListener("click",openPremi
 document.getElementById("closePayButton")?.addEventListener("click",closePay);
 document.getElementById("payCampaignButton")?.addEventListener("click",payCampaign);
 document.getElementById("closePremiumButton")?.addEventListener("click",closePremium);
-document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);\ndocument.getElementById("joinLeaderboardButton")?.addEventListener("click",joinLeaderboard);
+document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);
+document.getElementById("joinLeaderboardButton")?.addEventListener("click",joinLeaderboard);
 window.addEventListener("error",e=>{console.error(e.error||e.message);toast("Page error: "+(e.message||"JavaScript error"));});
 window.addEventListener("unhandledrejection",e=>{console.error(e.reason);toast("Request error: "+(e.reason?.message||"Unexpected error"));});
 if(detectPhantom()){walletProvider=detectPhantom();const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM READY · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}config();restoreLeaderboardForm();loadCampaigns();loadAnalytics();loadRewards();
