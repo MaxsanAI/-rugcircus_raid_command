@@ -20,7 +20,7 @@ function normalizeGroup(value){
 export async function onRequestGet({request,env}) {
   if(!env.TELEGRAM_BOT_TOKEN)return new Response("Telegram bot token is not configured",{status:503});
 
-  const appUrl=env.PUBLIC_APP_URL||new URL(request.url).origin;
+  const appUrl="https://raidrugcircus.pulserapp.com";
   const webhookUrl=appUrl+"/api/telegram";
   const body={
     url:webhookUrl,
