@@ -27,7 +27,7 @@ export async function onRequestPost({request,env}){
       await env.DB.prepare("UPDATE leaderboard_members SET points=points+1 WHERE id=?").bind(member.id).run();
     }
     const updated=await env.DB.prepare("SELECT COUNT(*) AS points FROM leaderboard_views WHERE member_id=? AND viewed_at>=datetime('now','-7 days')").bind(member.id).first();
-    return json({ok:true,awarded:Number(inserted?.changes||0)>0,points:Number(updated?.points||0)});
+    const current=await env.DB.prepare("SELECT points FROM leaderboard_members WHERE id=?").bind(member.id).first();\n    return json({ok:true,awarded:Number(inserted?.changes||0)>0,points:Number(current?.points||0)});
   }catch(error){
     console.error("LEADERBOARD VIEW ERROR",error);
     return json({ok:false,error:"Could not record raid view"},500);
