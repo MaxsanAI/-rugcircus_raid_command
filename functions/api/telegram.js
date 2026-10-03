@@ -30,7 +30,7 @@ async function requireAdmin(chatId,userId,token){
 }
 
 async function sendPanel(chatId,token,appUrl){
-  const openButton={text:"🚀 Open Command Center",web_app:{url:appUrl}};
+  const openButton={text:"🚀 Open Command Center",url:"https://raidrugcircus.pulserapp.com/"};
   return tgCall("sendMessage",token,{
     chat_id:chatId,
     text:"🎪 RUGCIRCUS COMMAND\n\nChoose an action:",
@@ -82,7 +82,7 @@ async function sendRaid(chatId,env,chatUsername){
   buttons.push([{text:"🪐 JUPITER",url:"https://jup.ag/"}]);
   buttons.push([{text:"⚡ RAYDIUM",url:"https://raydium.io/"}]);
   buttons.push([{text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"}]);
-  buttons.push([{text:"🚀 OPEN COMMAND CENTER",web_app:{url:appUrl}}]);
+  buttons.push([{text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}]);
   return tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:lines.join("\n"),reply_markup:{inline_keyboard:buttons}});
 }
 
@@ -133,7 +133,7 @@ async function handleCommand(message,env){
       chat_id:chatId,
       text:"🎪 RUGCIRCUS COMMAND\n\n⚔️ RAID • 🪙 $RUGCX • 📣 CAMPAIGNS • 🛡️ COMMUNITY CONTROL\n\nUse /panel for admin tools or /raid for the active raid.",
       reply_markup:{inline_keyboard:[
-        [{text:"🎪 Open Command",web_app:{url:appUrl}}],
+        [{text:"🎪 Open Command",url:"https://raidrugcircus.pulserapp.com/"}],
         [{text:"⚔️ Live Raid",callback_data:"raid"},{text:"🪙 $RUGCX",callback_data:"token"}]
       ]}
     });
@@ -157,7 +157,7 @@ async function handleCommand(message,env){
       text:"🎪 $RUGCX · RUGCIRCUS\n\n🪙 Official Pump.fun token page:",
       reply_markup:{inline_keyboard:[
         [{text:"🔥 Open $RUGCX on Pump.fun",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnN32Xh6ffjDwFeJFMqnNnSpump"}],
-        [{text:"🚀 Open Command Center",web_app:{url:appUrl}}]
+        [{text:"🚀 Open Command Center",url:"https://raidrugcircus.pulserapp.com/"}]
       ]}
     });
     return;
