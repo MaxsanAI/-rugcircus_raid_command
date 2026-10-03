@@ -3,6 +3,8 @@ const BASE_POOL_LAMPORTS=30000000;
 const REWARD_BPS=1000;
 
 async function ensureSchema(db){
+  await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_sponsor_opens (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,opened_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+
   await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_members (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,wallet_address TEXT NOT NULL,member_token TEXT NOT NULL UNIQUE,points INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
 }
 
@@ -12,7 +14,7 @@ export async function onRequestGet({env}){
     await ensureSchema(env.DB);
     const [row,leaders]=await Promise.all([
       env.DB.prepare("SELECT COALESCE(SUM(amount_lamports),0) AS lamports FROM campaigns WHERE package!='FREE RAID' AND amount_lamports>0 AND created_at>=datetime('now','-7 days')").first(),
-      env.DB.prepare("SELECT m.username,m.wallet_address AS wallet,m.points AS points FROM leaderboard_members m WHERE m.points>0 ORDER BY m.points DESC,m.created_at ASC LIMIT 20").all()
+      env.DB.prepare("SELECT m.username,m.wallet_address AS wallet,(SELECT COUNT(*) FROM leaderboard_views v WHERE v.member_id=m.id AND v.viewed_at>=datetime('now','-7 days'))+(SELECT COUNT(*)*2 FROM leaderboard_sponsor_opens s WHERE s.member_id=m.id AND s.opened_at>=datetime('now','-7 days')) AS points FROM leaderboard_members m ORDER BY points DESC,m.created_at ASC LIMIT 20").all()
     ]);
     const paidRevenueLamports=Number(row?.lamports||0);
     const revenueContributionLamports=Math.floor(paidRevenueLamports*REWARD_BPS/10000);
