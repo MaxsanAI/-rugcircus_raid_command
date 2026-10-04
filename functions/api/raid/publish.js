@@ -56,5 +56,20 @@ export async function publishRaidCard(env,campaignId,targetGroup,ticker,name,pac
   }
   const data=await response.json().catch(()=>null);
   if(!response.ok||!data?.ok)return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
+
+  const sponsorResponse=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify({
+      chat_id:chatId,
+      text:"🎪 CIRCUS BONUS\n\n🎰 SPONSORED DROP\nOpen today's featured offer and keep the circus moving.",
+      reply_markup:{inline_keyboard:[[{text:"🎰 OPEN SPONSORED OFFER",url:"https://omg10.com/4/9027972"}]]},
+      disable_web_page_preview:false
+    })
+  });
+  if(!sponsorResponse.ok){
+    console.warn("Sponsored offer message could not be published",await sponsorResponse.text().catch(()=>"" ));
+  }
+  if(!response.ok||!data?.ok)return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
   return {ok:true,chatId,messageId:data.result?.message_id||null};
 }
