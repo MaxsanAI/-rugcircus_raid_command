@@ -23,15 +23,15 @@ export async function publishRaidCard(env,campaignId,targetGroup,ticker,name,pac
   if(pumpCalloutUrl)buttons.push([{text:"🎯 PUMP CALLOUT",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=callout"}]);
   buttons.push([
     {text:"🪙 OPEN PUMP.FUN",url:pumpUrl},
-    {text:"🟢 PUMP.FUN MOVERS",url:"https://pump.fun/explore"}
+    {text:"🟢 PUMP.FUN MOVERS",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=movers"}
   ]);
   buttons.push([
-    {text:"📈 DEXSCREENER",url:"https://dexscreener.com/solana/"+(mintAddress||"")},
-    {text:"🦅 BIRDEYE",url:"https://birdeye.so/token/"+(mintAddress||"")}
+    {text:"📈 DEXSCREENER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=dexscreener"},
+    {text:"🦅 BIRDEYE",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=birdeye"}
   ]);
   buttons.push([
-    {text:"🪐 JUPITER",url:"https://jup.ag/swap/SOL-"+(mintAddress||"")},
-    {text:"⚡ RAYDIUM",url:"https://raydium.io/swap/?inputMint=sol&outputMint="+(mintAddress||"")}
+    {text:"🪐 JUPITER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=jupiter"},
+    {text:"⚡ RAYDIUM",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=raydium"}
   ]);
   buttons.push([
     {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
