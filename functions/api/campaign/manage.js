@@ -1,3 +1,5 @@
+import {resolveRaidImage} from "../raid/image.js";
+import {publishRaidCard} from "../raid/publish.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 const WALLET_RE=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const FREE_RE=/^[A-Za-z0-9_-]{8,128}$/;
@@ -14,6 +16,7 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN raid_copy TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN status TEXT DEFAULT 'active'").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_message_id INTEGER").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN logo_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN x_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN tiktok_url TEXT").run().catch(()=>{});
@@ -73,6 +76,32 @@ export async function onRequestPost({request,env}){
   if(!current)return json({ok:false,error:"Campaign not found or you are not its owner."},404);
   if(String(current.status||"")==="deleted")return json({ok:false,error:"This campaign has already been deleted."},409);
 
+  const action=String(body.action||"").trim().toLowerCase();
+  if(action==="publishagain"){
+    if(String(current.status||"")!=="active")return json({ok:false,error:"Only an active campaign can be published to Telegram."},409);
+    const imageUrl=await resolveRaidImage(current.logo_url,current.x_url,current.tiktok_url);
+    const telegram=await publishRaidCard(
+      env,
+      current.id,
+      current.telegram_group,
+      current.ticker,
+      current.name,
+      current.package,
+      current.ends_at,
+      current.x_url,
+      current.tiktok_url,
+      current.telegram_url,
+      current.pump_callout_url,
+      current.raid_copy,
+      imageUrl,
+      current.mint_address
+    );
+    if(!telegram.ok)return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",telegram},502);
+    await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN telegram_message_id INTEGER").run().catch(()=>{});
+    if(telegram.messageId)await env.DB.prepare("UPDATE campaigns SET telegram_message_id=? WHERE id=?").bind(telegram.messageId,current.id).run().catch(()=>{});
+    return json({ok:true,publishedAgain:true,campaignId:current.id,telegram});
+  }
+
   const ticker=clean(body.ticker,15).replace(/[^A-Za-z0-9_]/g,"");
   const name=clean(body.name,80);
   const xUrl=nullable(body.xUrl,2000);
@@ -85,8 +114,9 @@ export async function onRequestPost({request,env}){
   if(!ticker||!name)return json({ok:false,error:"Ticker and token name are required."},400);
   if(!["active","paused","ended"].includes(status))return json({ok:false,error:"Invalid campaign status."},400);
 
+  const resolvedImage=await resolveRaidImage(imageUrl,xUrl,tiktokUrl);
   await env.DB.prepare("UPDATE tokens SET ticker=?,name=?,x_url=?,tiktok_url=?,telegram_url=?,logo_url=? WHERE id=?")
-    .bind(ticker,name,xUrl,tiktokUrl,telegramUrl,imageUrl,current.token_id).run();
+    .bind(ticker,name,xUrl,tiktokUrl,telegramUrl,resolvedImage||imageUrl,current.token_id).run();
 
   await env.DB.prepare("UPDATE campaigns SET x_url=?,tiktok_url=?,telegram_url=?,raid_copy=?,pump_callout_url=?,status=? WHERE id=?")
     .bind(xUrl,tiktokUrl,telegramUrl,raidCopy,calloutUrl,status,id).run();
