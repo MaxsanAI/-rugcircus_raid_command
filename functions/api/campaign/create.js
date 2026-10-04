@@ -1,4 +1,4 @@
-import {prepareTelegramImage} from "../raid/image.js";
+import {prepareTelegramImage,resolveRaidImage} from "../raid/image.js";
 const API="https://api.mainnet-beta.solana.com";
 const PACKAGES={
   FEATURED:{lamports:20000000,hours:24},
@@ -48,19 +48,6 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_group TEXT").run().catch(()=>{});
   await db.prepare("CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,signature TEXT UNIQUE NOT NULL,wallet_address TEXT,lamports INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending',verified_at TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS premium_operators (id INTEGER PRIMARY KEY AUTOINCREMENT,wallet_address TEXT UNIQUE NOT NULL,telegram_id TEXT,x_handle TEXT,status TEXT NOT NULL DEFAULT 'active',paid_signature TEXT UNIQUE NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-}
-
-async function resolveRaidImage(imageUrl,xUrl){
-  const direct=String(imageUrl||"").trim();
-  if(/^https?:\/\//i.test(direct))return direct.slice(0,2000);
-  const x=String(xUrl||"").trim();
-  if(!/^https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\//i.test(x))return null;
-  try{
-    const r=await fetch(x,{headers:{"user-agent":"Mozilla/5.0 RUGCIRCUS Raid Preview"}});
-    const html=await r.text();
-    const match=html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i)||html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
-    return match?.[1]?match[1].replace(/&amp;/g,"&").slice(0,2000):null;
-  }catch{return null}
 }
 
 async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl,logoUrl}){
@@ -180,7 +167,7 @@ export async function onRequestPost({request,env}){
   if(!payment.ok) return json(payment,400);
   const existing=await env.DB.prepare("SELECT id FROM payments WHERE signature=?").bind(signature).first();
   if(existing) return json({ok:false,error:"This transaction has already been used"},409);
-  const logoUrl=await resolveRaidImage(body.imageUrl,body.xUrl);
+  const logoUrl=await resolveRaidImage(body.imageUrl,body.xUrl,body.tiktokUrl);
   const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim(),logoUrl});
   const now=new Date();
   const ends=new Date(now.getTime()+pack.hours*3600000);
