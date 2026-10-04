@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RUGCIRCUS logo">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff7fc"/>
+    <stop offset="0.55" stop-color="#f7edff"/>
+    <stop offset="1" stop-color="#fff5df"/>
+  </linearGradient>
+  <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff3d87"/>
+    <stop offset="1" stop-color="#d92872"/>
+  </linearGradient>
+  <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#a678ff"/>
+    <stop offset="1" stop-color="#7047e8"/>
+  </linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffd86a"/>
+    <stop offset="1" stop-color="#f0a928"/>
+  </linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+    <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#7b4bd8" flood-opacity=".18"/>
+  </filter>
+  <clipPath id="tent">
+    <path d="M92 368 L256 150 L420 368 Z"/>
+  </clipPath>
+</defs>
+
+<rect x="18" y="18" width="476" height="476" rx="112" fill="url(#bg)"/>
+<circle cx="256" cy="258" r="186" fill="#ffffff" fill-opacity=".5"/>
+
+<g filter="url(#shadow)">
+  <path d="M256 83 L269 112 L301 116 L277 137 L284 168 L256 152 L228 168 L235 137 L211 116 L243 112 Z" fill="url(#gold)"/>
+  <path d="M256 102 C256 102 275 83 287 68 C274 64 264 65 256 69 C248 65 238 64 225 68 C237 83 256 102 256 102Z" fill="url(#pink)"/>
+
+  <path d="M92 368 L256 150 L420 368 Z" fill="#fff"/>
+  <g clip-path="url(#tent)">
+    <path d="M92 368 L175 257 L225 257 L184 368 Z" fill="url(#pink)"/>
+    <path d="M184 368 L225 257 L256 150 L256 368 Z" fill="url(#violet)"/>
+    <path d="M256 368 L256 150 L287 257 L328 368 Z" fill="url(#pink)"/>
+    <path d="M328 368 L287 257 L337 257 L420 368 Z" fill="url(#violet)"/>
+  </g>
+
+  <path d="M76 368 Q256 398 436 368" fill="none" stroke="#6f43d8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M105 368 Q256 389 407 368" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M256 150 L256 368" stroke="#ffffff" stroke-opacity=".5" stroke-width="4"/>
+</g>
+</svg>
