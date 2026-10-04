@@ -13,4 +13,9 @@
 .campaignButtons a.campaignButton.raydium{background:linear-gradient(135deg,#48152f,#9a285f)!important;border-color:rgba(255,104,176,.38)!important}
 .token>.campaignButtons{grid-column:1/-1!important;margin:10px 0 0!important;width:100%!important;gap:7px!important}
 .token>.campaignButtons a.campaignButton{min-height:40px!important;min-width:0!important;width:100%!important;font-size:10px!important;border-radius:10px!important}
-@media(max-width:700px){.campaignButtons{grid-template-columns:1fr!important;gap:7px!important;margin:14px 16px 16px!important;width:calc(100% - 32px)!important}.campaignButtons a.campaignButton{min-height:42px!important;padding:9px 11px!important;font-size:10.5px!important;border-radius:10px!important}.token>.campaignButtons a.campaignButton{min-height:39px!important;font-size:10px!important}}
+@media(max-width:900px){.campaignButtons{grid-template-columns:1fr!important;gap:7px!important;margin:14px 16px 16px!important;width:calc(100% - 32px)!important}.campaignButtons a.campaignButton{min-height:42px!important;padding:9px 11px!important;font-size:10.5px!important;border-radius:10px!important}.token>.campaignButtons a.campaignButton{min-height:39px!important;font-size:10px!important}}
+
+.tokenMain .caLine{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tokenMain .copyTokenCa{display:inline-flex;align-items:center;justify-content:center;margin-top:6px;min-height:28px;padding:5px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,#171224,#2a1a3d);color:#fff;font:900 9px/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer}
+.tokenMain .copyTokenCa:hover{filter:brightness(1.12);border-color:rgba(85,216,255,.35)}
+@media(max-width:900px){.campaignButtons{grid-template-columns:1fr!important;gap:7px!important;margin:14px 16px 16px!important;width:calc(100% - 32px)!important}.campaignButtons a.campaignButton{min-height:42px!important;padding:9px 11px!important;font-size:10.5px!important;border-radius:10px!important}.token>.campaignButtons a.campaignButton{min-height:39px!important;font-size:10px!important}}
