@@ -19,3 +19,12 @@
 .tokenMain .copyTokenCa{display:inline-flex;align-items:center;justify-content:center;margin-top:6px;min-height:28px;padding:5px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,#171224,#2a1a3d);color:#fff;font:900 9px/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer}
 .tokenMain .copyTokenCa:hover{filter:brightness(1.12);border-color:rgba(85,216,255,.35)}
 @media(max-width:900px){.campaignButtons{grid-template-columns:1fr!important;gap:7px!important;margin:14px 16px 16px!important;width:calc(100% - 32px)!important}.campaignButtons a.campaignButton{min-height:42px!important;padding:9px 11px!important;font-size:10.5px!important;border-radius:10px!important}.token>.campaignButtons a.campaignButton{min-height:39px!important;font-size:10px!important}}
+/* Mobile viewport containment: keep embedded media/cards inside the page edge. */
+.raid,.panel,.token,.post,.sponsor,.campaignButtons,.campaignButton{min-width:0;max-width:100%}
+.tiktokPreview{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important;contain:layout paint}
+.tiktokPreview iframe{display:block;width:100%!important;max-width:100%!important;min-width:0!important;height:100%!important;border:0!important}
+@media(max-width:900px){
+  .raid,.panel,.token,.post,.sponsor{max-width:100%!important;min-width:0!important}
+  .tiktokPreview{width:100%!important;max-width:100%!important;min-width:0!important}
+  .tiktokPreview iframe{width:100%!important;max-width:100%!important;min-width:0!important}
+}
