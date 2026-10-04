@@ -309,9 +309,33 @@ document.getElementById("closePremiumButton")?.addEventListener("click",closePre
 document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);
 window.addEventListener("error",e=>{console.error("RUGCIRCUS page error",e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>{console.error("RUGCIRCUS request error",e.reason)});
-const tgApp=telegramWebApp();
-if(!tgApp&&detectPhantom()){walletProvider=detectPhantom();try{const r=await walletProvider.connect({onlyIfTrusted:true});if(r?.publicKey){walletAddress=r.publicKey.toString();localStorage.setItem("rugcircus_wallet",walletAddress)}}catch{}const hint=document.getElementById("walletHint");if(hint&&walletAddress)hint.textContent="PHANTOM CONNECTED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4)}
-config();restoreLeaderboardForm();loadCampaigns();loadAnalytics();loadRewards();
+(async()=>{
+  const tgApp=telegramWebApp();
+  if(tgApp){
+    try{
+      tgApp.ready();
+      tgApp.expand();
+      if(typeof tgApp.disableVerticalSwipes==="function")tgApp.disableVerticalSwipes();
+      telegramInitData=tgApp.initData||telegramInitData;
+      telegramUser=tgApp.initDataUnsafe?.user||telegramUser;
+      if(telegramInitData)localStorage.setItem("rugcircus_telegram_init_data",telegramInitData);
+    }catch(e){console.warn("Telegram Mini App init failed",e)}
+  }else if(detectPhantom()){
+    walletProvider=detectPhantom();
+    try{
+      const r=await walletProvider.connect({onlyIfTrusted:true});
+      if(r?.publicKey){
+        walletAddress=r.publicKey.toString();
+        localStorage.setItem("rugcircus_wallet",walletAddress);
+      }
+    }catch{}
+    const hint=document.getElementById("walletHint");
+    if(hint&&walletAddress)hint.textContent="PHANTOM CONNECTED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);
+  }
+  await config();
+  restoreLeaderboardForm();
+  await Promise.allSettled([loadCampaigns(),loadAnalytics(),loadRewards()]);
+})();
 </script>
 </body>
 </html>
