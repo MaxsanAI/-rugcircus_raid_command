@@ -317,7 +317,7 @@ window.addEventListener("unhandledrejection",e=>{console.error("RUGCIRCUS reques
     try{
       tgApp.ready();
       tgApp.expand();
-      if(typeof tgApp.disableVerticalSwipes==="function")tgApp.disableVerticalSwipes();
+      
       telegramInitData=tgApp.initData||telegramInitData;
       telegramUser=tgApp.initDataUnsafe?.user||telegramUser;
       if(telegramInitData)localStorage.setItem("rugcircus_telegram_init_data",telegramInitData);
