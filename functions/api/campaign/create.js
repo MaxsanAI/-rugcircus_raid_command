@@ -1,4 +1,5 @@
-import {prepareTelegramImage,resolveRaidImage} from "../raid/image.js";
+import {resolveRaidImage} from "../raid/image.js";
+import {publishRaidCard} from "../raid/publish.js";
 const API="https://api.mainnet-beta.solana.com";
 const PACKAGES={
   FEATURED:{lamports:20000000,hours:24},
@@ -97,54 +98,6 @@ async function verifyBotAdmin(env,targetGroup){
   if(status!=="administrator"&&status!=="creator")return {ok:false,error:"RUGCIRCUS bot must be an administrator in the raid group before launching a raid",chatId,status:status||"unknown"};
   return {ok:true,chatId,status};
 }
-async function publishRaidCard(env,campaignId,targetGroup,mintAddress,ticker,name,packageName,endsAt,xUrl,tiktokUrl,telegramUrl,pumpCalloutUrl,raidCopy,imageUrl){
-  if(!env.TELEGRAM_BOT_TOKEN) return {ok:false,error:"TELEGRAM_BOT_TOKEN is not configured"};
-  const chatId=normalizeTelegramGroup(targetGroup)||env.TELEGRAM_RAID_CHAT_ID||"@rugcxx";
-  const lines=["🎪 RUGCIRCUS RAID IS LIVE","", "🪙 $"+(ticker||"RUGCX")+(name?" · "+name:""), "📦 "+packageName, "⏳ Ends: "+endsAt];
-  if(raidCopy) lines.push("", "📣 "+raidCopy);
-  lines.push("", "⚔️ Join the raid and hit the links below.");
-  const buttons=[];
-  if(xUrl) buttons.push([{text:"𝕏 X RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=x"}]);
-  if(tiktokUrl) buttons.push([{text:"🎵 TIKTOK RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=tiktok"}]);
-  if(telegramUrl) buttons.push([{text:"✈️ TELEGRAM RAID",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=telegram"}]);
-  if(pumpCalloutUrl) buttons.push([{text:"🎯 PUMP CALLOUT",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=callout"}]);
-  buttons.push([
-    {text:"🪙 OPEN PUMP.FUN",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=pump"},
-    {text:"🟢 PUMP.FUN MOVERS",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=movers"}
-  ]);
-  buttons.push([
-    {text:"📈 DEXSCREENER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=dexscreener"},
-    {text:"🦅 BIRDEYE",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=birdeye"}
-  ]);
-  buttons.push([
-    {text:"🪐 JUPITER",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=jupiter"},
-    {text:"⚡ RAYDIUM",url:"https://raidrugcircus.pulserapp.com/api/raid/click?campaign="+campaignId+"&platform=raydium"}
-  ]);
-  buttons.push([
-    {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
-    {text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}
-  ]);
-  const caption=lines.join("\n");
-  let response;
-  if(imageUrl){
-    const image=await prepareTelegramImage(imageUrl);
-    if(image){
-      const form=new FormData();
-      form.set("chat_id",chatId);
-      form.set("photo",image,"raid-preview.jpg");
-      form.set("caption",caption);
-      form.set("reply_markup",JSON.stringify({inline_keyboard:buttons}));
-      response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendPhoto",{method:"POST",body:form});
-    }else{
-      response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendPhoto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,photo:imageUrl,caption,reply_markup:{inline_keyboard:buttons}})});
-    }
-  }else{
-    response=await fetch("https://api.telegram.org/bot"+env.TELEGRAM_BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chatId,text:caption,reply_markup:{inline_keyboard:buttons},disable_web_page_preview:true})});
-  }
-  const data=await response.json().catch(()=>null);
-  if(!response.ok||!data?.ok) return {ok:false,error:data?.description||"Telegram could not publish the raid card",chatId};
-  return {ok:true,chatId,messageId:data.result?.message_id||null};
-}
 export async function onRequestPost({request,env}){
   if(!env.DB||!env.PUBLIC_TREASURY_WALLET) return json({ok:false,error:"Campaign payments are not configured"},503);
   let body;try{body=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
@@ -173,7 +126,7 @@ export async function onRequestPost({request,env}){
   const ends=new Date(now.getTime()+pack.hours*3600000);
   const campaign=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,amount_sol,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payment_signature,payout_wallet,creator_wallet,free_user_id,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(token.id,String(body.package).toUpperCase(),pack.lamports,pack.lamports/1000000000,pack.hours,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",signature,payoutWallet,payerWallet||null,null,telegramGroup,now.toISOString(),ends.toISOString()).run();
   await env.DB.prepare("INSERT INTO payments (campaign_id,signature,wallet_address,lamports,status,verified_at) VALUES (?,?,?,?,?,?)").bind(campaign.meta.last_row_id,signature,String(body.payerWallet||"").trim()||null,pack.lamports,"verified",now.toISOString()).run();
-  const telegram=await publishRaidCard(env,campaign.meta.last_row_id,telegramGroup,mint,ticker,name,String(body.package).toUpperCase(),ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl);
+  const telegram=await publishRaidCard(env,campaign.meta.last_row_id,telegramGroup,mint,ticker,name,String(body.package).toUpperCase(),ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl,mint);
   if(!telegram.ok){
     await env.DB.prepare("UPDATE campaigns SET status='failed' WHERE id=?").bind(campaign.meta.last_row_id).run().catch(()=>{});
     return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",campaignId:campaign.meta.last_row_id,receivedLamports:payment.receivedLamports,telegram},502);
