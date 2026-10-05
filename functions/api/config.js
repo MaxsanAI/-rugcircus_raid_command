@@ -1,12 +1,14 @@
+import {telegramUserFromRequest} from "./_telegram.js";
+
 export async function onRequestGet({request,env}) {
   let premiumOperator=false;
-  const wallet=String(request.headers.get("x-wallet-address")||"").trim();
-  if(env.DB&&/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)){
-    premiumOperator=Boolean(await env.DB.prepare("SELECT id FROM premium_operators WHERE wallet_address=? AND status='active' AND expires_at>CURRENT_TIMESTAMP LIMIT 1").bind(wallet).first().catch(()=>null));
+  const telegramUser=await telegramUserFromRequest(request,env);
+  if(env.DB&&telegramUser?.id){
+    premiumOperator=Boolean(await env.DB.prepare("SELECT id FROM premium_operators WHERE telegram_id=? AND status='active' AND expires_at>CURRENT_TIMESTAMP LIMIT 1").bind(String(telegramUser.id)).first().catch(()=>null));
   }
   return new Response(JSON.stringify({
     ok:true,
-    treasury:env.PUBLIC_TREASURY_WALLET||null,
+    tonTreasury:env.TON_TREASURY_ADDRESS||env.PUBLIC_TON_TREASURY_ADDRESS||null,
     premiumOperator,
     monetagSmartLink:env.MONETAG_SMARTLINK||null,
     adsgramBlockId:env.PUBLIC_ADSGRAM_BLOCK_ID||null,
