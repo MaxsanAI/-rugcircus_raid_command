@@ -16,11 +16,21 @@ async function prepare(db,token,telegramId){
   if(!pending)await db.prepare("INSERT INTO leaderboard_ad_rewards (member_id,telegram_id,points,status) VALUES (?,?,3,'pending')").bind(member.id,String(telegramId)).run();
   return {ok:true};
 }
-async function prepareBotReward(db,telegramId){
+async function prepareBotReward(db,telegramId,telegramUsername=""){
   const id=String(telegramId||"").trim();
   if(!/^\d{1,20}$/.test(id))return {error:"Invalid Telegram user id",status:400};
   await ensureSchema(db);
-  const member=await db.prepare("SELECT id,telegram_id FROM leaderboard_members WHERE telegram_id=?").bind(id).first();
+  let member=await db.prepare("SELECT id,telegram_id FROM leaderboard_members WHERE telegram_id=?").bind(id).first();
+  if(!member&&telegramUsername){
+    const username=String(telegramUsername).trim().replace(/^@/,"");
+    if(username){
+      const candidate=await db.prepare("SELECT id,telegram_id FROM leaderboard_members WHERE lower(username)=lower(?)").bind(username).first();
+      if(candidate&&(!candidate.telegram_id||String(candidate.telegram_id)===id)){
+        await db.prepare("UPDATE leaderboard_members SET telegram_id=?,telegram_username=? WHERE id=?").bind(id,username,candidate.id).run();
+        member={id:candidate.id,telegram_id:id};
+      }
+    }
+  }
   if(!member)return {error:"Join the Reward Wall first in the Command Center.",status:403};
   const last=await db.prepare("SELECT rewarded_at FROM leaderboard_ad_rewards WHERE member_id=? AND status='rewarded' ORDER BY rewarded_at DESC LIMIT 1").bind(member.id).first();
   if(last?.rewarded_at){
