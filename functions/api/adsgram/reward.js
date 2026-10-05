@@ -16,6 +16,23 @@ async function prepare(db,token,telegramId){
   if(!pending)await db.prepare("INSERT INTO leaderboard_ad_rewards (member_id,telegram_id,points,status) VALUES (?,?,3,'pending')").bind(member.id,String(telegramId)).run();
   return {ok:true};
 }
+async function prepareBotReward(db,telegramId){
+  const id=String(telegramId||"").trim();
+  if(!/^\d{1,20}$/.test(id))return {error:"Invalid Telegram user id",status:400};
+  await ensureSchema(db);
+  const member=await db.prepare("SELECT id,telegram_id FROM leaderboard_members WHERE telegram_id=?").bind(id).first();
+  if(!member)return {error:"Join the Reward Wall first in the Command Center.",status:403};
+  const last=await db.prepare("SELECT rewarded_at FROM leaderboard_ad_rewards WHERE member_id=? AND status='rewarded' ORDER BY rewarded_at DESC LIMIT 1").bind(member.id).first();
+  if(last?.rewarded_at){
+    const elapsed=(Date.now()-Date.parse(String(last.rewarded_at).replace(" ","T")+"Z"))/1000;
+    if(elapsed<1800)return {error:"Reward cooldown active",status:429,remainingSeconds:Math.ceil(1800-elapsed)};
+  }
+  const pending=await db.prepare("SELECT id FROM leaderboard_ad_rewards WHERE member_id=? AND status='pending' AND created_at>=datetime('now','-10 minutes') LIMIT 1").bind(member.id).first();
+  if(!pending)await db.prepare("INSERT INTO leaderboard_ad_rewards (member_id,telegram_id,points,status) VALUES (?,?,3,'pending')").bind(member.id,id).run();
+  return {ok:true};
+}
+export { prepareBotReward };
+
 async function claim(db,telegramId){
   const pending=await db.prepare("SELECT id,member_id FROM leaderboard_ad_rewards WHERE telegram_id=? AND status='pending' AND created_at>=datetime('now','-10 minutes') ORDER BY id DESC LIMIT 1").bind(String(telegramId)).first();
   if(!pending)return {awarded:false};
