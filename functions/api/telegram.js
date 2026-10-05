@@ -234,7 +234,7 @@ async function handleCommand(message,env){
 
   if(cmd==="/panel"){await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);return;}
   if(cmd==="/raid"){await sendRaid(chatId,env,message.chat?.username);return;}
-  if(cmd==="/ad"){await sendAdsgramAd(chatId,userId,env);return;}
+  if(cmd==="/ad"){await sendAdsgramAd(chatId,userId,env,message.from?.username||"");return;}
 
   if(cmd==="/token"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
