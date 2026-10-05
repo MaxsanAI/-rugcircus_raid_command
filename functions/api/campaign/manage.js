@@ -24,7 +24,7 @@ async function ensureSchema(db){
 }
 
 function ownerFromRequest(request){
-  const wallet=clean(request.headers.get("x-wallet-address"),80);
+  const wallet=clean(request.headers.get("x-ton-wallet-address"),80);
   const freeUserId=clean(request.headers.get("x-free-user-id"),128);
   return {
     wallet:WALLET_RE.test(wallet)?wallet:"",
@@ -43,7 +43,7 @@ export async function onRequestGet({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   await ensureSchema(env.DB);
   const owner=ownerFromRequest(request);
-  if(!owner.wallet&&!owner.freeUserId)return json({ok:false,error:"Connect the wallet used to create paid campaigns or use the same browser for free campaigns."},401);
+  if(!owner.wallet&&!owner.freeUserId)return json({ok:false,error:"Connect the TON Wallet used to create paid campaigns or use the same browser for free campaigns."},401);
   let rows=[];
   if(owner.wallet&&owner.freeUserId){
     const r=await env.DB.prepare(
