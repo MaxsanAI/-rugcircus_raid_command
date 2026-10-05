@@ -33,12 +33,12 @@ export async function onRequestPost({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   let b;try{b=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
   const token=String(b.memberToken||"").trim(),telegramId=String(b.telegramId||"").trim();
-  if(!token||!/^\\d{1,20}$/.test(telegramId))return json({ok:false,error:"Telegram identity is required"},400);
+  if(!token||!/^\d{1,20}$/.test(telegramId))return json({ok:false,error:"Telegram identity is required"},400);
   try{await ensureSchema(env.DB);const r=await prepare(env.DB,token,telegramId);return json(r,r.status||200)}catch(e){console.error("ADSGRAM PREPARE",e);return json({ok:false,error:"Could not prepare reward"},500)}
 }
 export async function onRequestGet({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   const telegramId=String(new URL(request.url).searchParams.get("userid")||"").trim();
-  if(!/^\\d{1,20}$/.test(telegramId))return json({ok:false,error:"Invalid Telegram user id"},400);
+  if(!/^\d{1,20}$/.test(telegramId))return json({ok:false,error:"Invalid Telegram user id"},400);
   try{await ensureSchema(env.DB);const r=await claim(env.DB,telegramId);return json({ok:true,...r})}catch(e){console.error("ADSGRAM CLAIM",e);return json({ok:false,error:"Could not claim reward"},500)}
 }
