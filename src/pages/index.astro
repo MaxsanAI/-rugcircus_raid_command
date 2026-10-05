@@ -40,11 +40,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 .leaderPayoutInfo,.leaderHowItWorks{margin-top:18px;border:1px solid rgba(141,99,255,.22);border-radius:20px;padding:22px;background:linear-gradient(135deg,rgba(39,24,61,.8),rgba(16,13,24,.9));display:flex;align-items:center;justify-content:space-between;gap:22px}.leaderPayoutInfo h2,.leaderHowItWorks h2{margin:6px 0 7px}.leaderPayoutInfo p,.leaderHowItWorks p{margin:0;line-height:1.65}.payoutBadge{white-space:nowrap;padding:12px 15px;border-radius:12px;border:1px solid rgba(255,200,87,.3);background:rgba(92,59,11,.45);font-size:11px;font-weight:950;letter-spacing:.08em;color:#ffd979}.leaderHowItWorks{display:block}.howSteps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.howSteps>div{padding:15px;border:1px solid #2a2033;border-radius:14px;background:rgba(8,7,11,.35)}.howSteps b{display:block;color:#ff6da3;font-size:12px;margin-bottom:7px}.howSteps span{display:block;color:#b4a9ba;font-size:12px;line-height:1.5}.siteFooter{width:min(1100px,calc(100% - 32px));margin:10px auto 0;padding:28px 0 24px;border-top:1px solid #241d2b;color:#8f8498}.footerMain{display:flex;align-items:center;justify-content:space-between;gap:20px}.footerMain>b,.footerMain>div>b{color:#fff}.footerMain p{margin:6px 0 0;max-width:380px;font-size:12px}.footerLinks{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}.footerLinks a{color:#a99daf;text-decoration:none;font-size:11px;font-weight:800}.footerLinks a:hover{color:#fff}.whatsapp{color:#fff;text-decoration:none;background:linear-gradient(135deg,#145c45,#20a66f);padding:10px 13px;border-radius:10px;font-size:11px;font-weight:950;white-space:nowrap}.footerBottom{display:flex;justify-content:space-between;gap:15px;margin-top:22px;padding-top:15px;border-top:1px solid #1c1722;font-size:10px}@media(max-width:760px){.leaderPayoutInfo{align-items:flex-start;flex-direction:column}.howSteps{grid-template-columns:1fr 1fr}.footerMain{align-items:flex-start;flex-direction:column}.footerLinks{justify-content:flex-start}.whatsapp{width:100%;text-align:center}.footerBottom{flex-direction:column;gap:5px}}@media(max-width:520px){.leaderPayoutInfo,.leaderHowItWorks{padding:17px;border-radius:16px}.howSteps{grid-template-columns:1fr}.siteFooter{width:calc(100% - 22px)}.footerLinks{gap:10px 15px}}
 </style>
 <link rel="stylesheet" href="/raid-buttons.css?v=3380">
-<script is:inline src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
-<script is:inline src="/phantom-auth.js"></script>
-<script is:inline src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
-<script is:inline src="https://telegram.org/js/telegram-web-app.js?63"></script>
-<!-- global-auth-ready -->
+<!-- Telegram WebApp SDK is loaded in <head> before application code. Heavy wallet/ad SDKs are loaded on demand. -->
 </head>
 <body>
 <div class="app">
@@ -166,6 +162,23 @@ function showPage(p){if(!pages.includes(p))p="home";pages.forEach(x=>document.ge
 window.addEventListener("rugcircus:phantom-login",e=>{const w=e?.detail?.wallet;if(w){walletAddress=String(w);localStorage.setItem("rugcircus_wallet",walletAddress);walletProvider=detectPhantom()||walletProvider;updateLeaderboardIdentity();config()}});
 document.getElementById("menuToggle")?.addEventListener("click",()=>{const nav=document.getElementById("nav");if(!nav)return;const open=!nav.classList.contains("open");nav.classList.toggle("open",open);document.getElementById("menuToggle").setAttribute("aria-expanded",String(open));document.getElementById("menuToggle").setAttribute("aria-label",open?"Close menu":"Open menu")});
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+document.getElementById("walletHint")?.addEventListener("click",async()=>{
+  if(walletAddress){
+    const provider=walletProvider||detectPhantom();
+    if(provider?.disconnect){
+      try{await provider.disconnect()}catch{}
+    }
+    walletProvider=null;
+    walletAddress="";
+    localStorage.removeItem("rugcircus_wallet");
+    updateLeaderboardIdentity();
+    const hint=document.getElementById("walletHint");
+    if(hint){hint.textContent="👻 CONNECT WALLET";hint.classList.remove("authenticated")}
+    toast("Phantom disconnected");
+    return;
+  }
+  await connect();
+});
 document.querySelectorAll("[data-page-link]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageLink)));document.getElementById("connectTelegramButton")?.addEventListener("click",connectTelegram);document.getElementById("connectLeaderboardPhantomButton")?.addEventListener("click",connectLeaderboardPhantom);document.getElementById("joinLeaderboardButton")?.addEventListener("click",joinLeaderboard);document.getElementById("leaderUsername")?.addEventListener("input",()=>{if(!telegramUser){leaderboardIdentity=document.getElementById("leaderUsername").value.trim().replace(/^@/,"");updateLeaderboardIdentity()}});
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove("show"),2800)}
 function leaderboardToken(){return localStorage.getItem(LEADERBOARD_TOKEN_KEY)||""}
@@ -312,6 +325,17 @@ async function deleteMyCampaign(id){
   }catch(e){status.textContent=e?.message||"Could not delete campaign";toast(status.textContent)}
 }
 const externalScriptPromises={};
+function updateWalletHint(){
+  const hint=document.getElementById("walletHint");
+  if(!hint)return;
+  if(walletAddress){
+    hint.textContent="👻 "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);
+    hint.classList.add("authenticated");
+  }else{
+    hint.textContent="👻 CONNECT WALLET";
+    hint.classList.remove("authenticated");
+  }
+}
 function loadExternalScript(src,key){
   const id=key||src;
   if(externalScriptPromises[id])return externalScriptPromises[id];
@@ -416,9 +440,8 @@ async function connect(){
   try{
     const r=await provider.connect();
     walletAddress=(r.publicKey||provider.publicKey).toString();
-    const hint=document.getElementById("walletHint");
-    if(hint)hint.textContent="PHANTOM CONNECTED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);
     localStorage.setItem("rugcircus_wallet",walletAddress);
+    updateWalletHint();
     await config();
     return walletAddress;
   }catch{
