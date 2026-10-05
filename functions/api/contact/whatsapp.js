@@ -1,0 +1,1 @@
+export async function onRequestGet(){return Response.redirect("https://wa.me/38162248575",302)}
