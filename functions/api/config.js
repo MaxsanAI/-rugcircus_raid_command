@@ -9,6 +9,7 @@ export async function onRequestGet({request,env}) {
     treasury:env.PUBLIC_TREASURY_WALLET||null,
     premiumOperator,
     monetagSmartLink:env.MONETAG_SMARTLINK||null,
+    adsgramBlockId:env.PUBLIC_ADSGRAM_BLOCK_ID||null,
     social:{x:Boolean(env.X_BEARER_TOKEN),tiktok:Boolean(env.TIKTOK_ACCESS_TOKEN),telegram:Boolean(env.TELEGRAM_BOT_TOKEN)}
   }),{headers:{"content-type":"application/json","cache-control":"no-store"}});
 }
