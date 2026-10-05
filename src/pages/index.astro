@@ -7,6 +7,7 @@
 <meta name="description" content="RUGCIRCUS COMMAND — free Telegram group administration, social raids, Solana token campaigns and optional Premium Operator monetization.">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
 :root{color-scheme:dark;--bg:#07060b;--panel:#0d0b13;--panel2:#14101d;--line:#2b2238;--text:#fffaff;--muted:#a99db8;--hot:#ff3d87;--pink:#ff68b0;--violet:#8d63ff;--gold:#ffc857;--green:#55e6a5;--cyan:#55d8ff}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow-x:hidden}
@@ -22,7 +23,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.metric{padding:20px;border:1px solid rgba(255,255,255,.07);border-radius:18px;background:linear-gradient(145deg,rgba(24,19,34,.9),rgba(12,10,17,.9));box-shadow:0 12px 30px rgba(0,0,0,.18)}.metric b{display:block;font-size:25px;letter-spacing:-.03em}.metric span{color:#8f849b;font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:800}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:22px}.panelHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.panel h2{font-size:15px;margin:0}.muted{color:var(--muted)}.tag{font-size:9px;border:1px solid rgba(255,255,255,.1);padding:6px 9px;border-radius:999px;color:#a79aae;white-space:nowrap;background:rgba(255,255,255,.025);font-weight:900;letter-spacing:.08em}
 .tokens,.social{display:grid;gap:11px}.token,.post{border:1px solid rgba(255,255,255,.075);background:linear-gradient(145deg,#15101d,#0d0a12);border-radius:18px;padding:14px}.token{display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px;align-items:center}.coin{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:950;background:linear-gradient(135deg,#392050,#ff3d87);box-shadow:0 8px 25px rgba(255,61,135,.14)}.token b,.postTop b{font-size:13px}.token small{display:block;color:#8f849b;margin-top:4px;font-size:12px}.score{color:var(--green);font-weight:800;font-size:13px}.post{padding:15px}.postTop{display:flex;justify-content:space-between;gap:10px}.postTop span{font-size:12px;color:var(--muted)}.post p{margin:9px 0;color:#d1c8d7;line-height:1.5;font-size:13px}.tiny{display:inline-flex;align-items:center;justify-content:center;min-height:38px;font-size:13px;color:#fff;border:1px solid rgba(255,255,255,.1);padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.045);text-decoration:none;font-weight:900;white-space:nowrap}
-.sponsor{margin:20px 0;border:1px solid rgba(255,200,87,.18);background:linear-gradient(110deg,rgba(255,61,135,.08),rgba(141,99,255,.08));border-radius:18px;padding:15px 17px;display:flex;justify-content:space-between;align-items:center;gap:15px}.sponsor b{display:block;font-size:13px}.sponsor span{font-size:12px;color:#93879d}.sponsor a{color:#fff;text-decoration:none;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);padding:10px 13px;border-radius:10px;font-size:12px;font-weight:950}.sponsorReward{margin-top:7px;color:#ffc857;font-size:12px;line-height:1.45}.sponsorReward strong{color:#fff}
+.sponsor{margin:20px 0;border:1px solid rgba(255,200,87,.18);background:linear-gradient(110deg,rgba(255,61,135,.08),rgba(141,99,255,.08));border-radius:18px;padding:15px 17px;display:flex;justify-content:space-between;align-items:center;gap:15px}.sponsor b{display:block;font-size:13px}.sponsor span{font-size:12px;color:#93879d}.sponsor a{color:#fff;text-decoration:none;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);padding:10px 13px;border-radius:10px;font-size:12px;font-weight:950} .adsRewardCard{margin:18px 0;border:1px solid rgba(141,99,255,.28);background:linear-gradient(135deg,rgba(141,99,255,.12),rgba(255,61,135,.07));border-radius:20px;padding:18px}.adsRewardHead{display:flex;justify-content:space-between;align-items:center;gap:14px}.adsRewardHead h2{margin:5px 0 0;font-size:21px}.adsRewardCopy{color:#a99db8;font-size:13px;line-height:1.55;margin:8px 0 14px}.adsRewardButton{width:100%;min-height:52px;border:1px solid rgba(141,99,255,.45);border-radius:13px;background:linear-gradient(135deg,#6f3bc1,#d53d83);color:#fff;font-weight:950;letter-spacing:.04em;box-shadow:0 10px 28px rgba(141,99,255,.18)}.adsRewardButton:disabled{opacity:.55;cursor:not-allowed;filter:saturate(.5)}.adsRewardMeta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;color:#8f849b;font-size:11px}.adsRewardMeta strong{color:#ffc857}.sponsorReward{margin-top:7px;color:#ffc857;font-size:12px;line-height:1.45}.sponsorReward strong{color:#fff}
 .raid{border:1px solid rgba(255,255,255,.1);background:linear-gradient(145deg,#1a1123,#0c0911 72%);border-radius:24px;padding:0;box-shadow:0 25px 75px rgba(0,0,0,.4),0 0 0 1px rgba(255,61,135,.035);position:relative;overflow:hidden}.raid:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 95% 0,rgba(255,61,135,.2),transparent 35%),radial-gradient(circle at 0 100%,rgba(141,99,255,.16),transparent 36%);pointer-events:none}.raid>*{position:relative}
  .raidImage{height:180px;border-radius:0;overflow:hidden;margin:0;border:0;border-bottom:1px solid rgba(255,255,255,.08);background:#09070d;position:relative;display:flex;align-items:center;justify-content:center}.raidImage:after{content:"FEATURED RAID";position:absolute;left:18px;top:18px;padding:7px 10px;border-radius:999px;background:rgba(7,6,11,.72);border:1px solid rgba(255,255,255,.13);font-size:11px;font-weight:950;letter-spacing:.14em;color:#fff;backdrop-filter:blur(10px)}.raidImage img{width:320px;max-width:100%;height:180px;display:block;object-fit:cover;margin:auto}.tiktokPreview{height:520px;background:#050409;border-bottom:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}.tiktokPreview iframe{width:100%;height:100%;display:block;border:0}.tiktokOpenButton{position:absolute;right:14px;bottom:14px;z-index:4;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 13px;border-radius:11px;border:1px solid rgba(255,104,176,.45);background:linear-gradient(135deg,rgba(98,27,76,.94),rgba(142,62,211,.94));color:#fff!important;text-decoration:none!important;font-size:11px;font-weight:950;letter-spacing:.04em;box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.16);backdrop-filter:blur(10px);transition:translate .18s ease,filter .18s ease,box-shadow .18s ease}.tiktokOpenButton:hover{translate:0 -2px;filter:brightness(1.12);box-shadow:0 11px 28px rgba(141,99,255,.28),inset 0 1px 0 rgba(255,255,255,.18)}.tiktokPreviewFallback{position:absolute;inset:0;display:grid;place-items:center;color:#8b8194;font-size:11px;font-weight:900;letter-spacing:.08em;background:radial-gradient(circle,rgba(255,61,135,.1),transparent 55%)}.raidImageFallback{height:100%;display:grid;place-items:center;color:#80738d;font-weight:950;letter-spacing:.12em;background:radial-gradient(circle,rgba(255,61,135,.1),transparent 50%)}
 .raidTitle{display:flex;justify-content:space-between;align-items:start;gap:18px;padding:22px 22px 0}.raidTitle>div:first-child{min-width:0}.live{color:var(--green);font-size:11px;font-weight:950;letter-spacing:.16em}.raid h3{margin:8px 0 7px;font-size:27px;letter-spacing:-.035em}.raidTitle>b{font-size:9px;color:var(--gold);border:1px solid rgba(255,200,87,.22);background:rgba(255,200,87,.06);padding:7px 9px;border-radius:999px;white-space:nowrap}
@@ -110,7 +111,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
   </div>
 </div>
 
-<div class="leaderRewardCard">
+<div class="adsRewardCard"><div class="adsRewardHead"><div><div class="eyebrow">🎬 WATCH & EARN</div><h2>Watch a Rewarded Ad</h2></div><span class="tag">+3 POINTS</span></div><p class="adsRewardCopy">Watch the full AdsGram rewarded ad and earn <b>3 Reward Wall points</b>. One reward every 30 minutes.</p><button class="adsRewardButton" type="button" id="watchAdsgramButton" disabled>WATCH AD · +3 POINTS</button><div class="adsRewardMeta"><span id="adsgramStatus">Loading ad rewards…</span><span><strong>30 MIN COOLDOWN</strong></span></div></div><div class="leaderRewardCard">
   <div>
     <div class="eyebrow">REWARD POOL</div>
     <h2>Funded by the Circus</h2>
@@ -160,7 +161,7 @@ function freeUserId(){let id=localStorage.getItem(FREE_USER_KEY);if(!id){id=Date
 const TG="https://t.me/rugcxx";
 const X="https://x.com/RugCircusX";
 const pages=["home","explore","create","premium","movers","analytics","leaderboard","manage"];
-let walletAddress=localStorage.getItem("rugcircus_wallet")||localStorage.getItem("rugcircus_leaderboard_wallet")||"",walletProvider=null,treasury="",premiumOperator=false,pay={name:"FEATURED",amount:0.02};
+let walletAddress=localStorage.getItem("rugcircus_wallet")||localStorage.getItem("rugcircus_leaderboard_wallet")||"",walletProvider=null,treasury="",premiumOperator=false,adsgramBlockId="",adsgramController=null,pay={name:"FEATURED",amount:0.02};
 async function syncGlobalPhantomSession(){try{const r=await fetch("/api/auth/phantom/session",{cache:"no-store",credentials:"same-origin"});const d=await r.json();if(d.authenticated&&d.walletAddress){walletAddress=String(d.walletAddress);localStorage.setItem("rugcircus_wallet",walletAddress);walletProvider=detectPhantom()||walletProvider;const h=document.getElementById("walletHint");if(h){h.textContent="👻 "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);h.classList.add("authenticated")}}}catch{}}
 function showPage(p){if(!pages.includes(p))p="home";pages.forEach(x=>document.getElementById("page-"+x).classList.toggle("active",x===p));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));if(p==="analytics")loadAnalytics();if(p==="leaderboard")loadRewards();if(p==="manage")loadMyCampaigns();document.getElementById("nav")?.classList.remove("open");document.getElementById("menuToggle")?.setAttribute("aria-expanded","false");window.scrollTo({top:0,behavior:"smooth"})}
 window.addEventListener("rugcircus:phantom-login",e=>{const w=e?.detail?.wallet;if(w){walletAddress=String(w);localStorage.setItem("rugcircus_wallet",walletAddress);walletProvider=detectPhantom()||walletProvider;updateLeaderboardIdentity();config()}});
@@ -310,6 +311,40 @@ async function deleteMyCampaign(id){
     await loadMyCampaigns();
     await loadCampaigns();
   }catch(e){status.textContent=e?.message||"Could not delete campaign";toast(status.textContent)}
+}
+function initAdsgram(){
+  const button=document.getElementById("watchAdsgramButton"),status=document.getElementById("adsgramStatus");
+  if(!button)return;
+  if(!adsgramBlockId||!window.Adsgram){button.disabled=true;status.textContent=adsgramBlockId?"AdsGram is loading…":"AdsGram block is not configured yet.";return}
+  try{
+    adsgramController=window.Adsgram.init({blockId:adsgramBlockId});
+    button.disabled=false;status.textContent="Ready · full rewarded ad required";
+    if(!button.dataset.bound){button.dataset.bound="1";button.addEventListener("click",watchAdsgram)}
+  }catch{button.disabled=true;status.textContent="AdsGram could not be initialized."}
+}
+async function watchAdsgram(){
+  const button=document.getElementById("watchAdsgramButton"),status=document.getElementById("adsgramStatus");
+  const token=leaderboardToken(),tg=telegramWebApp(),telegramId=String(tg?.initDataUnsafe?.user?.id||"");
+  if(!token||!telegramId){toast("Join the Reward Wall from Telegram first.");return}
+  if(!adsgramController){initAdsgram();if(!adsgramController){toast("AdsGram is not ready yet.");return}}
+  button.disabled=true;status.textContent="Watch the full ad to earn +3 points…";
+  try{
+    const prep=await fetch("/api/adsgram/reward",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({memberToken:token,telegramId})});
+    const pd=await prep.json().catch(()=>({}));
+    if(!prep.ok||!pd.ok){
+      if(pd.remainingSeconds){status.textContent="Next ad reward in "+Math.ceil(pd.remainingSeconds/60)+" min.";toast(status.textContent)}
+      else{status.textContent=pd.error||"Ad reward is not available yet.";toast(status.textContent)}
+      button.disabled=false;return
+    }
+    await adsgramController.show();
+    status.textContent="Ad completed · waiting for confirmation…";
+    toast("Ad completed. +3 points will be added after confirmation.");
+    setTimeout(loadRewards,1800);
+  }catch{
+    status.textContent="No reward · watch the full ad to earn points.";
+    toast("No reward — the ad was not completed.");
+    button.disabled=false;
+  }
 }
 async function config(){try{const r=await fetch("/api/config",{cache:"no-store",headers:walletAddress?{"x-wallet-address":walletAddress}:{}});const d=await r.json();treasury=d.treasury||"";premiumOperator=Boolean(d.premiumOperator);if(d.monetagSmartLink){const a=document.getElementById("sponsorLink");a.href="/api/sponsor/click";a.onclick=e=>{e.preventDefault();window.open("/api/sponsor/click?memberToken="+encodeURIComponent(leaderboardToken()),"_blank","noopener")}}document.getElementById("premiumStatus").textContent=treasury?"Free campaigns pay to the RUGCIRCUS treasury. Premium Operators can use their own payout wallet.":"Treasury is not configured yet."}catch{}}
 function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)}
