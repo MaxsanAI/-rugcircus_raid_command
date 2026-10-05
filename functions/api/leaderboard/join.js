@@ -31,7 +31,7 @@ export async function onRequestPost({request,env}){
   const wallet=String(body.wallet||"").trim(),token=String(body.memberToken||"").trim(),initData=String(body.telegramInitData||"").trim();
   if(!WALLET_RE.test(wallet))return json({ok:false,error:"Connect a valid Solana wallet before joining the leaderboard."},400);
   let tg=null;
-  if(initData){if(!env.TELEGRAM_BOT_TOKEN)return json({ok:false,error:"Telegram authentication is not configured"},503);tg=await telegramUser(initData,env.TELEGRAM_BOT_TOKEN);if(!tg)return json({ok:false,error:"Telegram session could not be verified. Open the Command Center from Telegram and try again."},401)}
+  if(initData){if(!env.TELEGRAM_BOT_TOKEN)return json({ok:false,error:"Telegram authentication is not configured"},503);tg=await telegramUser(initData,env.TELEGRAM_BOT_TOKEN);if(!tg)tg=null}
   const tgUsername=String(tg?.username||"").trim().replace(/^@/,""),supplied=String(body.username||"").trim().replace(/^@/,"");
   const username=tg?(tgUsername||("tg_"+String(tg.id))):supplied;
   if(!USERNAME_RE.test(username))return json({ok:false,error:"Enter a valid Telegram username or open the Command Center from Telegram."},400);
