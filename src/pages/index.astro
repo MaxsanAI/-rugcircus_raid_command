@@ -143,7 +143,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
     <div class="footerLinks">
       <a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/risk-disclosure">Risk Disclosure</a><a href="/cookies">Cookies</a><a href="/contact">Contact</a>
     </div>
-    <a class="whatsapp" href="https://wa.me/38162248575" target="_blank" rel="noopener">💬 WhatsApp Support</a>
+    <button class="whatsapp" id="whatsappSupportButton" type="button">💬 WhatsApp Support</button>
   </div>
   <div class="footerBottom"><span>© 2026 RUGCIRCUS. All rights reserved.</span><span>Crypto assets involve substantial risk.</span></div>
 </footer>
@@ -400,6 +400,7 @@ async function payPremium(){if(!treasury){toast("Treasury wallet is not configur
 
 
 
+document.getElementById("whatsappSupportButton")?.addEventListener("click",()=>{window.location.href="/api/contact/whatsapp"});
 // Explicit button bindings: do not rely on inline onclick handlers.
 document.getElementById("manageConnectWallet")?.addEventListener("click",async()=>{const a=await connect();if(a)await loadMyCampaigns()});
 document.getElementById("manageRefresh")?.addEventListener("click",loadMyCampaigns);
