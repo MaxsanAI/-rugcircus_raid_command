@@ -1,6 +1,6 @@
 import {prepareTelegramImage} from "./raid/image.js";
 const API="https://api.telegram.org/bot";
-const APP_URL="https://rugcircus-raid-command.pages.dev";
+const APP_URL="https://raidrugcircus.pulserapp.com";
 
 async function tgCall(method,token,body={}){
   const response=await fetch(API+token+"/"+method,{
