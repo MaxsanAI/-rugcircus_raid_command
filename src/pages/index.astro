@@ -522,33 +522,62 @@ document.getElementById("payPremiumButton")?.addEventListener("click",payPremium
 window.addEventListener("error",e=>{console.error("RUGCIRCUS page error",e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>{console.error("RUGCIRCUS request error",e.reason)});
 
+function runRugcircusBackground(task,label){
+  const run=()=>Promise.resolve().then(task).catch(e=>console.warn("RUGCIRCUS background task failed:",label,e));
+  if(typeof window.requestIdleCallback==="function"){
+    window.requestIdleCallback(run,{timeout:2500});
+  }else{
+    window.setTimeout(run,120);
+  }
+}
+
 (async()=>{
+  if(window.__RUGCIRCUS_MINIAPP_BOOTED)return;
+  window.__RUGCIRCUS_MINIAPP_BOOTED=true;
+
   const tgApp=telegramWebApp();
   if(tgApp){
     try{
       tgApp.ready();
-      tgApp.expand();
-      
       telegramInitData=tgApp.initData||telegramInitData;
       telegramUser=tgApp.initDataUnsafe?.user||telegramUser;
       if(telegramInitData)localStorage.setItem("rugcircus_telegram_init_data",telegramInitData);
+
+      window.setTimeout(()=>{
+        try{
+          if(!tgApp.isExpanded)tgApp.expand();
+        }catch(e){console.warn("Telegram Mini App expand failed",e)}
+      },0);
     }catch(e){console.warn("Telegram Mini App init failed",e)}
   }else if(detectPhantom()){
     walletProvider=detectPhantom();
-    try{
-      const r=await walletProvider.connect({onlyIfTrusted:true});
-      if(r?.publicKey){
-        walletAddress=r.publicKey.toString();
-        localStorage.setItem("rugcircus_wallet",walletAddress);
-      }
-    }catch{}
-    const hint=document.getElementById("walletHint");
-    if(hint&&walletAddress)hint.textContent="PHANTOM LINKED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);
+    runRugcircusBackground(async()=>{
+      try{
+        const r=await walletProvider.connect({onlyIfTrusted:true});
+        if(r?.publicKey){
+          walletAddress=r.publicKey.toString();
+          localStorage.setItem("rugcircus_wallet",walletAddress);
+          const hint=document.getElementById("walletHint");
+          if(hint)hint.textContent="PHANTOM LINKED · "+walletAddress.slice(0,4)+"…"+walletAddress.slice(-4);
+        }
+      }catch{}
+    },"trusted Phantom session");
   }
-  await syncGlobalPhantomSession();
-  await config();
+
   restoreLeaderboardForm();
-  await Promise.allSettled([loadCampaigns(),loadAnalytics(),loadRewards()]);
+
+  // Campaigns are the only network-heavy task needed immediately for the visible home screen.
+  // Everything else starts after the Mini App is already interactive.
+  try{
+    await loadCampaigns();
+  }catch(e){
+    console.warn("RUGCIRCUS campaign boot failed",e);
+  }
+
+  runRugcircusBackground(syncGlobalPhantomSession,"Phantom session sync");
+  runRugcircusBackground(config,"remote config");
+  runRugcircusBackground(loadAnalytics,"analytics");
+  runRugcircusBackground(loadRewards,"rewards");
 })();
 </script>
 </body>
