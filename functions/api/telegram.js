@@ -1,4 +1,5 @@
 import {prepareTelegramImage} from "./raid/image.js";
+import {prepareBotReward} from "./adsgram/reward.js";
 const API="https://api.telegram.org/bot";
 const APP_URL="https://raidrugcircus.pulserapp.com";
 
@@ -127,6 +128,73 @@ async function sendAdminError(chatId,env,text){
   await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text});
 }
 
+async function sendAdsgramAd(chatId,telegramId,env){
+  if(!env.ADSGRAM_TOKEN||!env.PUBLIC_ADSGRAM_BLOCK_ID){
+    await sendAdminError(chatId,env,"🎬 Ads are not configured yet.");
+    return;
+  }
+  if(!env.DB){
+    await sendAdminError(chatId,env,"🎬 Reward Wall is temporarily unavailable.");
+    return;
+  }
+
+  const prepared=await prepareBotReward(env.DB,telegramId);
+  if(!prepared.ok){
+    if(prepared.status===429){
+      const minutes=Math.max(1,Math.ceil(Number(prepared.remainingSeconds||1800)/60));
+      await sendAdminError(chatId,env,"⏳ Your next ad reward is available in about "+minutes+" minute"+(minutes===1?"":"s")+"." );
+    }else{
+      await sendAdminError(chatId,env,"🎬 "+(prepared.error||"Join the Reward Wall first in the Command Center."));
+    }
+    return;
+  }
+
+  const blockId=String(env.PUBLIC_ADSGRAM_BLOCK_ID).replace(/^bot-/i,"").trim();
+  const url="https://api.adsgram.ai/advbot?tgid="+encodeURIComponent(String(telegramId))+"&blockid="+encodeURIComponent(blockId)+"&language=en&token="+encodeURIComponent(String(env.ADSGRAM_TOKEN));
+  let response;
+  try{
+    response=await fetch(url,{method:"GET",headers:{accept:"application/json"}});
+  }catch(e){
+    console.error("ADSGRAM REQUEST",e);
+    await sendAdminError(chatId,env,"🎬 Could not load an ad right now. Please try again later.");
+    return;
+  }
+  const ad=await response.json().catch(()=>null);
+  if(!response.ok||!ad?.click_url||!ad?.reward_url){
+    console.error("ADSGRAM RESPONSE",response.status,ad);
+    await sendAdminError(chatId,env,"🎬 No ad is available right now. Please try again later.");
+    return;
+  }
+
+  const keyboard={inline_keyboard:[
+    [{text:String(ad.button_name||"OPEN AD"),url:ad.click_url}],
+    [{text:String(ad.button_reward_name||"🎁 CLAIM +3 POINTS"),url:ad.reward_url}]
+  ]};
+  const caption=String(ad.text_html||"🎬 Sponsored ad\n\nOpen the ad, complete the visit, then return here and claim your +3 points.");
+
+  if(ad.image_url){
+    const result=await tgCall("sendPhoto",env.TELEGRAM_BOT_TOKEN,{
+      chat_id:chatId,
+      photo:ad.image_url,
+      caption:caption.slice(0,1024),
+      parse_mode:"HTML",
+      reply_markup:keyboard,
+      protect_content:true
+    });
+    if(!result.ok)console.error("ADSGRAM SEND PHOTO",result.data);
+    return;
+  }
+
+  const result=await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
+    chat_id:chatId,
+    text:caption.slice(0,4096),
+    parse_mode:"HTML",
+    reply_markup:keyboard,
+    protect_content:true
+  });
+  if(!result.ok)console.error("ADSGRAM SEND MESSAGE",result.data);
+}
+
 async function handleCommand(message,env){
   const chatId=message.chat.id;
   const userId=message.from?.id;
@@ -159,13 +227,14 @@ async function handleCommand(message,env){
   if(cmd==="/help"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
       chat_id:chatId,
-      text:"🎪 RUGCIRCUS COMMAND\n\n/start — Open Command Center\n/help — Show commands\n/raid — Active raid\n/token — $RUGCX\n/status — Bot status\n/group — Group status\n/id — Show chat/user IDs\n\n🛡️ Admins:\n/panel — Admin panel\n/announce <text> — Announcement\n/pin — Pin replied message\n/unpin — Remove pin\n/clean — Delete replied message\n/ban — Ban replied user\n/unban <user id> — Unban user\n/mute [10m|1h] — Mute replied user\n/unmute — Unmute replied user"
+      text:"🎪 RUGCIRCUS COMMAND\n\n/start — Open Command Center\n/help — Show commands\n/raid — Active raid\n/ad — Watch a sponsored ad\n/token — $RUGCX\n/status — Bot status\n/group — Group status\n/id — Show chat/user IDs\n\n🛡️ Admins:\n/panel — Admin panel\n/announce <text> — Announcement\n/pin — Pin replied message\n/unpin — Remove pin\n/clean — Delete replied message\n/ban — Ban replied user\n/unban <user id> — Unban user\n/mute [10m|1h] — Mute replied user\n/unmute — Unmute replied user"
     });
     return;
   }
 
   if(cmd==="/panel"){await sendPanel(chatId,env.TELEGRAM_BOT_TOKEN,appUrl);return;}
   if(cmd==="/raid"){await sendRaid(chatId,env,message.chat?.username);return;}
+  if(cmd==="/ad"){await sendAdsgramAd(chatId,userId,env);return;}
 
   if(cmd==="/token"){
     await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
