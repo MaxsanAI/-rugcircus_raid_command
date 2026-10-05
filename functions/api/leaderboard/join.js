@@ -1,5 +1,5 @@
 import {Address} from "@ton/core";
-import {telegramUserFromRequest} from "../_telegram.js";
+import {telegramUserFromRequest,telegramUserFromBody} from "../_telegram.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 const USERNAME_RE=/^[A-Za-z0-9_]{3,32}$/;
 function tonAddress(value){try{return Address.parse(String(value||"").trim()).toString({urlSafe:true,bounceable:true,testOnly:false})}catch{return ""}}
@@ -12,8 +12,9 @@ async function ensureSchema(db){
 }
 export async function onRequestPost({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
-  const tg=await telegramUserFromRequest(request,env);if(!tg)return json({ok:false,error:"Open the Command Center from Telegram to join the leaderboard."},401);
   let body;try{body=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
+  const tg=await telegramUserFromRequest(request,env)||await telegramUserFromBody(body,env);
+  if(!tg)return json({ok:false,error:"Telegram session could not be verified. Open the Leaderboard from the Telegram Mini App."},401);
   const wallet=tonAddress(body.wallet),token=String(body.memberToken||"").trim(),supplied=String(body.username||"").trim().replace(/^@/,""),tgUsername=String(tg.username||"").trim().replace(/^@/,""),username=tgUsername||supplied||("tg_"+String(tg.id));
   if(!wallet)return json({ok:false,error:"Connect a valid TON Wallet before joining the leaderboard."},400);
   if(!USERNAME_RE.test(username))return json({ok:false,error:"Enter a valid Telegram username."},400);
