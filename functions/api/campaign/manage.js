@@ -1,7 +1,8 @@
+import {Address} from "@ton/core";
 import {resolveRaidImage} from "../raid/image.js";
 import {publishRaidCard} from "../raid/publish.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
-const WALLET_RE=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const WALLET_RE=/^[A-Za-z0-9_-]{48}$/;
 const FREE_RE=/^[A-Za-z0-9_-]{8,128}$/;
 const clean=(v,max=2000)=>String(v??"").trim().slice(0,max);
 const nullable=(v,max=2000)=>{const s=clean(v,max);return s||null};
@@ -24,10 +25,10 @@ async function ensureSchema(db){
 }
 
 function ownerFromRequest(request){
-  const wallet=clean(request.headers.get("x-ton-wallet-address"),80);
+  const walletRaw=clean(request.headers.get("x-ton-wallet-address"),100);let wallet="";try{wallet=Address.parse(walletRaw).toRawString()}catch{}
   const freeUserId=clean(request.headers.get("x-free-user-id"),128);
   return {
-    wallet:WALLET_RE.test(wallet)?wallet:"",
+    wallet:WALLET_RE.test(walletRaw)||wallet?wallet:"",
     freeUserId:FREE_RE.test(freeUserId)?freeUserId:""
   };
 }
