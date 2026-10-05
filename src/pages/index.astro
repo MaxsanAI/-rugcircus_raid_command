@@ -383,6 +383,7 @@ document.getElementById("closePremiumButton")?.addEventListener("click",closePre
 document.getElementById("payPremiumButton")?.addEventListener("click",payPremium);
 window.addEventListener("error",e=>{console.error("RUGCIRCUS page error",e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>{console.error("RUGCIRCUS request error",e.reason)});
+import("/phantom-auth.js").catch(()=>{});
 (async()=>{
   const tgApp=telegramWebApp();
   if(tgApp){
