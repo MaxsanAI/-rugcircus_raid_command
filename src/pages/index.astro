@@ -346,7 +346,7 @@ async function connect(){
     return null;
   }
 }
-function openPay(name,amount){pay={name,amount};document.getElementById("payTitle").textContent=name;document.getElementById("payAmount").textContent=amount.toFixed(2)+" SOL";document.getElementById("payStatus").textContent=Number(amount)===0?"No wallet required. The raid will be posted automatically to @rugcxx.":"A wallet is required only for this paid package.";document.getElementById("payModal").classList.add("open")}
+function openPay(name,amount){pay={name,amount};document.getElementById("payTitle").textContent=name;document.getElementById("payAmount").textContent=amount.toFixed(2)+" SOL";document.getElementById("payStatus").textContent=Number(amount)===0?"No wallet required. The raid will be posted automatically to @rugcxx.":"Phantom will show the exact SOL amount and treasury recipient before you approve. No token approval or wallet-draining instruction is used.";document.getElementById("payModal").classList.add("open")}
 function closePay(){document.getElementById("payModal").classList.remove("open")}
 function openPremium(){document.getElementById("premiumModal").classList.add("open")}
 function closePremium(){document.getElementById("premiumModal").classList.remove("open")}
@@ -357,30 +357,35 @@ async function transfer(lamports,to,address=null){
   if(!provider){toast("Phantom wallet is not available");return null}
   if(!to){toast("Payment recipient is not configured");return null}
   if(!Number.isSafeInteger(Number(lamports))||Number(lamports)<=0){toast("Invalid payment amount");return null}
-  let recipient;
-  try{recipient=new solanaWeb3.PublicKey(to)}catch{toast("Payment recipient is invalid");return null}
-  const rpcEndpoints=["https://solana-rpc.publicnode.com","https://api.mainnet-beta.solana.com"];
+  let recipient,fromPublicKey;
   try{
-    let connection=null, latest=null, lastError=null;
+    recipient=new solanaWeb3.PublicKey(to);
+    fromPublicKey=new solanaWeb3.PublicKey(from);
+  }catch{toast("Payment wallet address is invalid");return null}
+  const providerKey=provider.publicKey?.toString?.()||"";
+  if(providerKey&&providerKey!==from){toast("Phantom account changed. Reconnect the wallet and try again.");return null}
+  const rpcEndpoints=["https://api.mainnet-beta.solana.com","https://solana-rpc.publicnode.com"];
+  try{
+    let connection=null, latest=null;
     for(const rpc of rpcEndpoints){
       try{
         const candidate=new solanaWeb3.Connection(rpc,"confirmed");
         latest=await candidate.getLatestBlockhash("confirmed");
         connection=candidate;
         break;
-      }catch(e){lastError=e}
+      }catch{}
     }
     if(!connection||!latest)throw new Error("Solana RPC access failed. Please try again in a moment.");
     const {blockhash,lastValidBlockHeight}=latest;
     const tx=new solanaWeb3.Transaction({
-      feePayer:new solanaWeb3.PublicKey(from),
+      feePayer:fromPublicKey,
       recentBlockhash:blockhash
     }).add(solanaWeb3.SystemProgram.transfer({
-      fromPubkey:new solanaWeb3.PublicKey(from),
+      fromPubkey:fromPublicKey,
       toPubkey:recipient,
       lamports:Number(lamports)
     }));
-    const sent=await provider.signAndSendTransaction(tx);
+    const sent=await provider.signAndSendTransaction(tx,{preflightCommitment:"confirmed",maxRetries:3});
     const signature=sent?.signature||sent;
     if(!signature)throw new Error("Phantom did not return a transaction signature");
     await connection.confirmTransaction({signature,lastValidBlockHeight,blockhash},"confirmed");
