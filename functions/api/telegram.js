@@ -128,7 +128,7 @@ async function sendAdminError(chatId,env,text){
   await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text});
 }
 
-async function sendAdsgramAd(chatId,telegramId,env){
+async function sendAdsgramAd(chatId,telegramId,env,messageFromUsername=""){
   if(!env.ADSGRAM_TOKEN||!env.PUBLIC_ADSGRAM_BLOCK_ID){
     await sendAdminError(chatId,env,"🎬 Ads are not configured yet.");
     return;
@@ -138,7 +138,7 @@ async function sendAdsgramAd(chatId,telegramId,env){
     return;
   }
 
-  const prepared=await prepareBotReward(env.DB,telegramId);
+  const prepared=await prepareBotReward(env.DB,telegramId,String(messageFromUsername||""));
   if(!prepared.ok){
     if(prepared.status===429){
       const minutes=Math.max(1,Math.ceil(Number(prepared.remainingSeconds||1800)/60));
