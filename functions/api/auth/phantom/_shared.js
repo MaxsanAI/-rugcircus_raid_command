@@ -64,5 +64,7 @@ async function ensureAuthSchema(db){
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_phantom_auth_challenges_expires ON phantom_auth_challenges(expires_at)").run().catch(()=>{});
   await db.prepare("CREATE TABLE IF NOT EXISTS phantom_auth_sessions (id TEXT PRIMARY KEY,wallet_address TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_phantom_auth_sessions_wallet ON phantom_auth_sessions(wallet_address)").run().catch(()=>{});
+  await db.prepare("CREATE TABLE IF NOT EXISTS phantom_deeplink_callbacks (id TEXT PRIMARY KEY,payload TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_phantom_deeplink_callbacks_expires ON phantom_deeplink_callbacks(expires_at)").run().catch(()=>{});
 }
 export {SESSION_COOKIE,SESSION_TTL,CHALLENGE_TTL,WALLET_RE,b64url,fromB64url,sha256Hex,randomToken,verifyEd25519,cookieValue,sessionCookie,ensureAuthSchema};
