@@ -139,10 +139,11 @@ async function completeMobileCallback(){
   if(payload.errorCode)throw Error(payload.errorMessage||"Phantom request was rejected");
   const kp=loadKeypair();
   if(!kp)throw Error("Phantom connection state is missing. Please reconnect.");
-  const phantomPublicKey=b58Decode(payload.phantom_encryption_public_key||"");
+  const phantomPublicKey=b58Decode(payload.phantom_encryption_public_key||sessionStorage.getItem("rugcircus_phantom_encryption_public_key")||"");
   if(phantomPublicKey.length!==32)throw Error("Invalid Phantom encryption key");
   const decrypted=decrypt(payload,kp,phantomPublicKey);
   if(decrypted.data?.public_key&&decrypted.data?.session){
+    sessionStorage.setItem("rugcircus_phantom_encryption_public_key",b58Encode(phantomPublicKey));
     const wallet=String(decrypted.data.public_key);
     localStorage.setItem(key,wallet);
     sessionStorage.setItem("rugcircus_phantom_session",String(decrypted.data.session));
