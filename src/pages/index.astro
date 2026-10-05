@@ -219,8 +219,15 @@ async function deleteMyCampaign(id){
 }
 async function config(){try{const r=await fetch("/api/config",{cache:"no-store",headers:walletAddress?{"x-wallet-address":walletAddress}:{}});const d=await r.json();treasury=d.treasury||"";premiumOperator=Boolean(d.premiumOperator);if(d.monetagSmartLink){const a=document.getElementById("sponsorLink");a.href="/api/sponsor/click";a.onclick=e=>{e.preventDefault();window.open("/api/sponsor/click?memberToken="+encodeURIComponent(leaderboardToken()),"_blank","noopener")}}document.getElementById("premiumStatus").textContent=treasury?"Free campaigns pay to the RUGCIRCUS treasury. Premium Operators can use their own payout wallet.":"Treasury is not configured yet."}catch{}}
 function isMobile(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)}
-function phantomBrowseUrl(){return "https://phantom.app/ul/browse/"+encodeURIComponent(window.location.href)+"?ref="+encodeURIComponent(window.location.origin)}
-function openPhantom(){window.location.href=phantomBrowseUrl()}
+function phantomBrowseUrl(){const target=encodeURIComponent(window.location.href);const ref=encodeURIComponent(window.location.origin);return "https://phantom.app/ul/browse/"+target+"?ref="+ref}
+function openPhantom(){
+  const url=phantomBrowseUrl();
+  const tg=telegramWebApp();
+  if(isMobile()&&tg&&typeof tg.openLink==="function"){
+    try{tg.openLink(url,{try_instant_view:false});return}catch{}
+  }
+  window.location.assign(url);
+}
 function detectPhantom(){return window.phantom?.solana||window.solana||null}
 async function connect(){
   const provider=detectPhantom();
