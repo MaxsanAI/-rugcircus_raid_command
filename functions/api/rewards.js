@@ -15,7 +15,7 @@ export async function onRequestGet({env}){
     await ensureSchema(env.DB);
     const [row,leaders,countRow]=await Promise.all([
       env.DB.prepare("SELECT COALESCE(SUM(amount_lamports),0) AS lamports FROM campaigns WHERE package!='FREE RAID' AND amount_lamports>0 AND created_at>=datetime('now','-7 days')").first(),
-      env.DB.prepare("SELECT m.username,m.wallet_address AS wallet,(SELECT COUNT(*) FROM leaderboard_views v WHERE v.member_id=m.id AND v.viewed_at>=datetime('now','-7 days'))+(SELECT COUNT(*)*2 FROM leaderboard_sponsor_opens s WHERE s.member_id=m.id AND s.opened_at>=datetime('now','-7 days')) AS points FROM leaderboard_members m ORDER BY points DESC,m.created_at ASC LIMIT 20").all(),
+      env.DB.prepare("SELECT m.username,m.wallet_address AS wallet,m.points AS points FROM leaderboard_members m ORDER BY points DESC,m.created_at ASC LIMIT 20").all(),
       env.DB.prepare("SELECT COUNT(*) AS count FROM leaderboard_members").first()
     ]);
     const paidRevenueLamports=Number(row?.lamports||0);
