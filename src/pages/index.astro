@@ -6,8 +6,7 @@
 <title>RUGCIRCUS COMMAND — Raid & Community Control</title>
 <meta name="description" content="RUGCIRCUS COMMAND — free Telegram group administration, social raids, Solana token campaigns and optional Premium Operator monetization.">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
 <style>
 :root{color-scheme:dark;--bg:#07060b;--panel:#0d0b13;--panel2:#14101d;--line:#2b2238;--text:#fffaff;--muted:#a99db8;--hot:#ff3d87;--pink:#ff68b0;--violet:#8d63ff;--gold:#ffc857;--green:#55e6a5;--cyan:#55d8ff}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow-x:hidden}
@@ -312,10 +311,55 @@ async function deleteMyCampaign(id){
     await loadCampaigns();
   }catch(e){status.textContent=e?.message||"Could not delete campaign";toast(status.textContent)}
 }
-function initAdsgram(){
+const externalScriptPromises={};
+function loadExternalScript(src,key){
+  const id=key||src;
+  if(externalScriptPromises[id])return externalScriptPromises[id];
+  if((key==="solana"&&window.solanaWeb3)||(key==="adsgram"&&window.Adsgram))return Promise.resolve();
+  externalScriptPromises[id]=new Promise((resolve,reject)=>{
+    const existing=document.querySelector('script[data-rugcircus-loader="'+id+'"]');
+    if(existing){
+      existing.addEventListener("load",()=>resolve(),{once:true});
+      existing.addEventListener("error",()=>reject(new Error("Failed to load "+id)),{once:true});
+      return;
+    }
+    const script=document.createElement("script");
+    script.src=src;
+    script.async=true;
+    script.defer=true;
+    script.dataset.rugcircusLoader=id;
+    script.onload=()=>resolve();
+    script.onerror=()=>{delete externalScriptPromises[id];reject(new Error("Failed to load "+id))};
+    document.head.appendChild(script);
+  });
+  return externalScriptPromises[id];
+}
+async function ensureSolanaWeb3(){
+  if(window.solanaWeb3)return true;
+  try{
+    await loadExternalScript("https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js","solana");
+    return !!window.solanaWeb3;
+  }catch(e){
+    console.error("RUGCIRCUS Solana SDK load failed",e);
+    toast("Solana tools could not be loaded. Please try again.");
+    return false;
+  }
+}
+async function ensureAdsgram(){
+  if(window.Adsgram)return true;
+  try{
+    await loadExternalScript("https://sad.adsgram.ai/js/sad.min.js","adsgram");
+    return !!window.Adsgram;
+  }catch(e){
+    console.error("RUGCIRCUS AdsGram SDK load failed",e);
+    return false;
+  }
+}
+async function initAdsgram(){
   const button=document.getElementById("watchAdsgramButton"),status=document.getElementById("adsgramStatus");
   if(!button)return;
-  if(!adsgramBlockId||!window.Adsgram){button.disabled=true;status.textContent=adsgramBlockId?"AdsGram is loading…":"AdsGram block is not configured yet.";return}
+  if(!adsgramBlockId){button.disabled=true;status.textContent="AdsGram block is not configured yet.";return}
+  if(!(await ensureAdsgram())){button.disabled=true;status.textContent="AdsGram could not be loaded.";return}
   try{
     adsgramController=window.Adsgram.init({blockId:adsgramBlockId});
     button.disabled=false;status.textContent="Ready · full rewarded ad required";
@@ -326,7 +370,7 @@ async function watchAdsgram(){
   const button=document.getElementById("watchAdsgramButton"),status=document.getElementById("adsgramStatus");
   const token=leaderboardToken(),tg=telegramWebApp(),telegramId=String(tg?.initDataUnsafe?.user?.id||"");
   if(!token||!telegramId){toast("Join the Reward Wall from Telegram first.");return}
-  if(!adsgramController){initAdsgram();if(!adsgramController){toast("AdsGram is not ready yet.");return}}
+  if(!adsgramController){await initAdsgram();if(!adsgramController){toast("AdsGram is not ready yet.");return}}
   button.disabled=true;status.textContent="Watch the full ad to earn +3 points…";
   try{
     const prep=await fetch("/api/adsgram/reward",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({memberToken:token,telegramId})});
@@ -387,6 +431,7 @@ function closePay(){document.getElementById("payModal").classList.remove("open")
 function openPremium(){document.getElementById("premiumModal").classList.add("open")}
 function closePremium(){document.getElementById("premiumModal").classList.remove("open")}
 async function transfer(lamports,to,address=null){
+  if(!(await ensureSolanaWeb3()))return null;
   const from=address||await connect();
   if(!from)return null;
   const provider=walletProvider||detectPhantom();
