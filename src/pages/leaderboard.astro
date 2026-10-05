@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RUGCIRCUS — Leaderboard</title>
+<meta name="description" content="RUGCIRCUS community leaderboard and reward rankings.">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@3.0.2/dist/tonconnect-ui.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#07060b;--panel:#100c17;--panel2:#17111f;--line:rgba(255,255,255,.08);--text:#fffaff;--muted:#a99db8;--hot:#ff3d87;--pink:#ff68b0;--violet:#8d63ff;--gold:#ffc857;--green:#55e6a5;--cyan:#55d8ff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow-x:hidden}
+button{font:inherit;cursor:pointer}.app{min-height:100vh;background:radial-gradient(circle at 8% 0,rgba(255,61,135,.16),transparent 27%),radial-gradient(circle at 92% 0,rgba(141,99,255,.2),transparent 31%),radial-gradient(circle at 50% 75%,rgba(255,200,87,.05),transparent 30%),linear-gradient(145deg,#07060b,#0b0811 52%,#07060b)}
+.top{height:76px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 30px;position:sticky;top:0;z-index:10;background:rgba(7,6,11,.82);backdrop-filter:blur(22px);box-shadow:0 8px 35px rgba(0,0,0,.22)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:950;letter-spacing:.05em;white-space:nowrap}.logo{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--hot),var(--violet));box-shadow:0 0 35px rgba(255,61,135,.3);font-size:20px}.brand small{display:block;color:#8f829e;font-size:10px;letter-spacing:.22em;margin-top:2px}
+.back{color:#fff;text-decoration:none;border:1px solid var(--line);background:rgba(255,255,255,.045);padding:10px 14px;border-radius:11px;font-size:12px;font-weight:900}
+.wrap{max-width:1180px;margin:auto;padding:38px 24px 70px}.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:25px;margin-bottom:20px}.eyebrow{color:var(--gold);font-size:11px;font-weight:950;letter-spacing:.2em;text-transform:uppercase}.hero h1{font-size:clamp(42px,7vw,76px);line-height:.9;letter-spacing:-.065em;margin:10px 0 14px}.hero h1 span{background:linear-gradient(90deg,#fff,var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}.hero p{margin:0;max-width:680px;color:#b8adbf;font-size:15px;line-height:1.65}.live{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid rgba(85,230,165,.25);border-radius:999px;background:rgba(85,230,165,.06);font-size:10px;font-weight:950;letter-spacing:.08em;white-space:nowrap}.live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.stat{padding:17px 18px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#15101d,#0d0a12);box-shadow:0 14px 38px rgba(0,0,0,.16)}.stat strong{display:block;font-size:24px;letter-spacing:-.03em}.stat span{display:block;margin-top:5px;color:#81758c;font-size:9px;font-weight:950;letter-spacing:.1em}
+.grid{display:grid;grid-template-columns:350px minmax(0,1fr);gap:14px;align-items:start}.card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,#15101d,#0c0911);box-shadow:0 20px 60px rgba(0,0,0,.22);padding:21px}.cardHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.card h2{margin:7px 0 0;font-size:24px;letter-spacing:-.025em}.pill{font-size:9px;font-weight:950;letter-spacing:.09em;padding:7px 9px;border-radius:999px;border:1px solid rgba(255,200,87,.2);color:var(--gold);background:rgba(255,200,87,.06);white-space:nowrap}
+.identity{margin-top:17px;display:grid;gap:10px}.identityBox{padding:14px;border:1px solid rgba(85,230,165,.22);border-radius:15px;background:rgba(85,230,165,.045)}.identityBox b{display:block;font-size:14px}.identityBox span{display:block;color:#91869b;font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.connect{width:100%;min-height:50px;border-radius:13px;border:1px solid rgba(141,99,255,.35);background:linear-gradient(135deg,#24163d,#6d3fbb);color:#fff;font-weight:950}.connect.connected{border-color:rgba(85,230,165,.32);background:linear-gradient(135deg,#10382c,#16755c)}.wallet{margin-top:10px;border-color:rgba(141,99,255,.38)}.hint{margin:12px 0 0;color:#8f849b;font-size:11px;line-height:1.5}.status{min-height:20px;margin-top:12px;color:#8f849b;font-size:11px;line-height:1.5}.status.good{color:var(--green);font-weight:900}.rules{display:grid;gap:8px;margin-top:18px}.rule{padding:11px 12px;border:1px solid rgba(255,255,255,.065);border-radius:12px;background:rgba(255,255,255,.025);color:#a99db8;font-size:12px;line-height:1.45}.rule b{color:#fff}
+.boardCard{min-width:0}.boardTop{display:flex;align-items:flex-end;justify-content:space-between;gap:15px;margin-bottom:14px}.pool{color:var(--gold);font-size:11px;font-weight:950}.table{border:1px solid rgba(255,255,255,.065);border-radius:16px;overflow:hidden;background:rgba(0,0,0,.12)}.row{display:grid;grid-template-columns:45px minmax(0,1fr) 125px 80px;gap:12px;align-items:center;padding:15px 14px;border-bottom:1px solid rgba(255,255,255,.055)}.row:last-child{border-bottom:0}.head{background:rgba(255,255,255,.025);color:#7f748b;font-size:9px;font-weight:950;letter-spacing:.1em;text-transform:uppercase}.row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.walletText{color:#81758c;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;overflow:hidden;text-overflow:ellipsis}.points{text-align:right;color:var(--green);font-weight:950;white-space:nowrap}.rank{font-weight:950;color:var(--gold);font-size:16px}.you{background:linear-gradient(90deg,rgba(255,61,135,.08),rgba(141,99,255,.055));box-shadow:inset 3px 0 0 var(--hot)}.youTag{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:5px;color:#fff;background:rgba(255,61,135,.2);font-size:8px;letter-spacing:.06em;vertical-align:middle}
+.rewards{margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.reward{padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:14px;background:rgba(255,255,255,.025);text-align:center}.reward b{display:block;font-size:14px}.reward span{display:block;color:#81758c;font-size:10px;margin-top:4px}.info{margin-top:14px;padding:16px;border:1px solid rgba(255,200,87,.15);border-radius:16px;background:linear-gradient(110deg,rgba(255,61,135,.055),rgba(141,99,255,.06))}.info h3{margin:0 0 6px;font-size:15px}.info p{margin:0;color:#95899f;font-size:12px;line-height:1.55}
+.empty{padding:35px 18px;text-align:center;color:#81758c;font-size:12px}.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--pink);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:7px}@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(17,12,24,.94);box-shadow:0 18px 45px rgba(0,0,0,.35);font-size:12px;font-weight:850;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:850px){.hero{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.top{height:68px;padding:0 14px}.brand{font-size:13px}.logo{width:38px;height:38px}.wrap{padding:25px 13px 50px}.hero h1{font-size:43px}.hero p{font-size:13px}.stats{gap:8px}.stat{padding:13px 12px}.stat strong{font-size:20px}.stat span{font-size:8px}.card{padding:15px;border-radius:18px}.card h2{font-size:21px}.row{grid-template-columns:30px minmax(0,1fr) 58px 49px;gap:6px;padding:12px 8px;font-size:11px}.walletText{font-size:8px}.points{font-size:9px}.head{font-size:8px}.rewards{grid-template-columns:1fr}.reward{text-align:left;display:flex;justify-content:space-between;align-items:center}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="logo">🎪</div><div>RUGCIRCUS<small>LEADERBOARD</small></div></div>
+  <a class="back" href="/">← COMMAND</a>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div><div class="eyebrow">🎪 COMMUNITY REWARDS</div><h1>THE <span>RAIDERS.</span></h1><p>Join the live ranking, earn points from raid participation and compete for the Circus reward pool.</p></div>
+    <div class="live"><i></i> LIVE RANKINGS</div>
+  </section>
+  <section class="stats">
+    <div class="stat"><strong id="memberCount">0</strong><span>OPTED-IN RAIDERS</span></div>
+    <div class="stat"><strong id="pool">0.030</strong><span>REWARD POOL GRAM</span></div>
+    <div class="stat"><strong id="topScore">0</strong><span>TOP SCORE</span></div>
+    <div class="stat"><strong id="revenue">0.000</strong><span>FROM REVENUE</span></div>
+  </section>
+  <section class="grid">
+    <aside class="card">
+      <div class="cardHead"><div><div class="eyebrow">YOUR ENTRY</div><h2>Raider Status</h2></div><span class="pill" id="joinState">NOT JOINED</span></div>
+      <div class="identity">
+        <div class="identityBox" id="telegramBox"><b>✈️ Telegram</b><span id="telegramState">Detecting Telegram account…</span></div>
+        <button class="connect" id="walletButton" type="button">💎 CONNECT WALLET</button>
+      </div>
+      <p class="hint">Telegram identifies you automatically inside the Mini App. Connect your TON Wallet once and your leaderboard entry is created automatically — no extra JOIN step.</p>
+      <div class="status" id="joinStatus"></div>
+      <div class="rules">
+        <div class="rule">👀 <b>+1 point</b> for a valid raid view.</div>
+        <div class="rule">🎪 <b>+2 points</b> for a valid sponsored offer.</div>
+        <div class="rule">⏱️ The same raid can earn <b>1 point per 24 hours</b>.</div>
+      </div>
+    </aside>
+    <section class="card boardCard">
+      <div class="boardTop"><div><div class="eyebrow">LIVE LEADERBOARD</div><h2>Top Raiders</h2></div><div class="pool" id="poolLabel">0.030 GRAM</div></div>
+      <div class="table" id="leaderboard"><div class="empty"><span class="spinner"></span>Loading live rankings…</div></div>
+      <div class="rewards">
+        <div class="reward"><b>🥇 0.015 GRAM</b><span>1st place</span></div>
+        <div class="reward"><b>🥈 0.010 GRAM</b><span>2nd place</span></div>
+        <div class="reward"><b>🥉 0.005 GRAM</b><span>3rd place</span></div>
+      </div>
+      <div class="info"><h3>Rewards every 15 days</h3><p>The top three eligible raiders are finalized at the end of each 15-day period. Keep the reward wallet connected so the payout can be made.</p></div>
+    </section>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+</div>
+<script>
+const TOKEN_KEY="rugcircus_leaderboard_token";
+const USER_KEY="rugcircus_leaderboard_username";
+const WALLET_KEY="rugcircus_ton_wallet";
+let tg=null,telegramInitData="",telegramUser=null,tonConnectUI=null,walletAddress=localStorage.getItem(WALLET_KEY)||localStorage.getItem("rugcircus_leaderboard_wallet")||"";
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove("show"),2600)}
+function mask(v){const s=String(v||"");return s.length>10?s.slice(0,5)+"…"+s.slice(-5):s}
+function initTelegram(){tg=window.Telegram?.WebApp||null;if(!tg){$("telegramState").textContent="Open this page from the RUGCIRCUS Telegram Mini App.";return false}try{tg.ready();tg.expand()}catch{}telegramInitData=tg.initData||"";telegramUser=tg.initDataUnsafe?.user||null;if(telegramInitData)localStorage.setItem("rugcircus_telegram_init_data",telegramInitData);if(telegramUser){const n=String(telegramUser.username||("tg_"+telegramUser.id)).replace(/^@/,"");$("telegramState").textContent="@"+n+" · verified";$("telegramBox").classList.add("identityBox")}else $("telegramState").textContent="Telegram account could not be detected.";return !!(telegramInitData&&telegramUser)}
+function setWalletButton(){const b=$("walletButton");if(walletAddress){b.textContent="✓ WALLET CONNECTED · "+mask(walletAddress);b.classList.add("connected")}else{b.textContent="💎 CONNECT WALLET";b.classList.remove("connected")}}
+function initTon(){if(tonConnectUI||!window.TON_CONNECT_UI?.TonConnectUI)return !!tonConnectUI;try{tonConnectUI=new window.TON_CONNECT_UI.TonConnectUI({manifestUrl:"https://raidrugcircus.pulserapp.com/tonconnect-manifest.json",buttonRootId:null,language:"en",uiPreferences:{theme:"DARK"}});tonConnectUI.onStatusChange(w=>{walletAddress=String(w?.account?.address||"");if(walletAddress)localStorage.setItem(WALLET_KEY,walletAddress);else localStorage.removeItem(WALLET_KEY);setWalletButton();autoJoin()});return true}catch(e){console.error(e);return false}}
+async function connectWallet(){if(!initTon()){toast("Wallet connector is still loading. Try again.");return}if(tonConnectUI.connected&&walletAddress){autoJoin();return}try{await tonConnectUI.openModal();await tonConnectUI.connectionRestored;walletAddress=walletAddress||String(tonConnectUI.account?.address||"");if(walletAddress)localStorage.setItem(WALLET_KEY,walletAddress);setWalletButton();await autoJoin()}catch(e){toast("Wallet connection cancelled")}}
+function setJoined(username,points){$("joinState").textContent="JOINED";$("joinState").style.color="var(--green)";$("joinStatus").className="status good";$("joinStatus").textContent="✓ @"+String(username||"raider").replace(/^@/,"")+" is already on the leaderboard · "+Number(points||0)+" points";$("walletButton").classList.add("connected")}
+async function autoJoin(){if(!telegramInitData||!telegramUser||!walletAddress)return;const username=String(telegramUser.username||("tg_"+telegramUser.id)).replace(/^@/,"");$("joinStatus").textContent="Syncing your leaderboard entry…";try{const r=await fetch("/api/leaderboard/join",{method:"POST",headers:{"content-type":"application/json","x-telegram-init-data":telegramInitData},body:JSON.stringify({username,wallet:walletAddress,memberToken:localStorage.getItem(TOKEN_KEY)||"",telegramInitData})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"Could not join leaderboard");localStorage.setItem(TOKEN_KEY,d.memberToken);localStorage.setItem(USER_KEY,d.member.username);localStorage.setItem("rugcircus_leaderboard_wallet",d.member.wallet);setJoined(d.member.username,d.member.points);await loadLeaderboard()}catch(e){$("joinStatus").className="status";$("joinStatus").textContent=e.message||"Could not sync leaderboard entry"}}
+async function loadLeaderboard(){const list=$("leaderboard");try{const r=await fetch("/api/rewards",{cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Leaderboard unavailable");$("memberCount").textContent=Number(d.leaderboardMembers||0);$("pool").textContent=Number(d.rewardPoolGram||0).toFixed(3);$("poolLabel").textContent=Number(d.rewardPoolGram||0).toFixed(3)+" GRAM";$("topScore").textContent=Number(d.leaderboard?.[0]?.points||0);$("revenue").textContent=Number(d.revenueContributionGram||0).toFixed(3);const me=String(localStorage.getItem(USER_KEY)||"").replace(/^@/,"");if(!d.leaderboard?.length){list.innerHTML='<div class="empty">No raiders have joined yet.</div>';return}list.innerHTML='<div class="row head"><span>#</span><b>RAIDER</b><span>WALLET</span><strong>POINTS</strong></div>'+d.leaderboard.map((x,i)=>{const n=String(x.username||"Anonymous").replace(/^@/,""),you=me&&n.toLowerCase()===me.toLowerCase();return '<div class="row '+(you?"you":"")+'"><span class="rank">'+(i<3?["🥇","🥈","🥉"][i]:i+1)+'</span><b>@'+n+(you?'<span class="youTag">YOU</span>':"")+'</b><span class="walletText">'+String(x.wallet||"—")+'</span><strong class="points">'+Number(x.points||0)+' pts</strong></div>'}).join("")}catch(e){list.innerHTML='<div class="empty">Could not load live rankings. Please refresh.</div>'}}
+async function boot(){initTelegram();initTon();setWalletButton();const token=localStorage.getItem(TOKEN_KEY),savedUser=localStorage.getItem(USER_KEY),savedWallet=localStorage.getItem(WALLET_KEY);if(token&&savedUser){$("joinState").textContent="JOINED";$("joinState").style.color="var(--green)";$("joinStatus").className="status good";$("joinStatus").textContent="✓ @"+savedUser.replace(/^@/,"")+" is already on the leaderboard";}if(savedWallet){walletAddress=savedWallet;setWalletButton()}await loadLeaderboard();await autoJoin()}
+$("walletButton").addEventListener("click",connectWallet);
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
+</script>
+</body>
+</html>
