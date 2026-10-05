@@ -117,8 +117,8 @@ async function beginMobileConnect(){
     alert(e.message||"Could not open Phantom");
   }
 }
-async function beginMobileSign(sessionToken,message,sharedSecret){
-  const nonce=nacl.randomBytes(24);
+async function beginMobileSign(sessionToken,message,sharedSecret,challengeId){
+  sessionStorage.setItem("rugcircus_phantom_login_message",message);\n  sessionStorage.setItem("rugcircus_phantom_challenge",String(challengeId||""));\n  const nonce=nacl.randomBytes(24);
   const payload={
     message:b58Encode(new TextEncoder().encode(message)),
     session:sessionToken,
@@ -151,7 +151,7 @@ async function completeMobileCallback(){
     const n=await fetch("/api/auth/phantom/nonce",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({wallet}),credentials:"same-origin"});
     const c=await n.json();
     if(!n.ok||!c.ok)throw Error(c.error||"Could not start secure wallet login");
-    await beginMobileSign(String(decrypted.data.session),c.message,decrypted.shared);
+    await beginMobileSign(String(decrypted.data.session),c.message,decrypted.shared,c.challengeId);
     return true;
   }
   const sessionToken=sessionStorage.getItem("rugcircus_phantom_session")||"";
