@@ -10,7 +10,7 @@ async function prepare(db,token,telegramId){
   const last=await db.prepare("SELECT rewarded_at FROM leaderboard_ad_rewards WHERE member_id=? AND status='rewarded' ORDER BY rewarded_at DESC LIMIT 1").bind(member.id).first();
   if(last?.rewarded_at){
     const elapsed=(Date.now()-Date.parse(String(last.rewarded_at).replace(" ","T")+"Z"))/1000;
-    if(elapsed<1800)return {error:"Reward cooldown active",status:429,remainingSeconds:Math.ceil(1800-elapsed)};
+    if(elapsed<180)return {error:"Reward cooldown active",status:429,remainingSeconds:Math.ceil(180-elapsed)};
   }
   const pending=await db.prepare("SELECT id FROM leaderboard_ad_rewards WHERE member_id=? AND status='pending' AND created_at>=datetime('now','-10 minutes') LIMIT 1").bind(member.id).first();
   if(!pending)await db.prepare("INSERT INTO leaderboard_ad_rewards (member_id,telegram_id,points,status) VALUES (?,?,3,'pending')").bind(member.id,String(telegramId)).run();
@@ -35,7 +35,7 @@ async function prepareBotReward(db,telegramId,telegramUsername=""){
   const last=await db.prepare("SELECT rewarded_at FROM leaderboard_ad_rewards WHERE member_id=? AND status='rewarded' ORDER BY rewarded_at DESC LIMIT 1").bind(member.id).first();
   if(last?.rewarded_at){
     const elapsed=(Date.now()-Date.parse(String(last.rewarded_at).replace(" ","T")+"Z"))/1000;
-    if(elapsed<1800)return {error:"Reward cooldown active",status:429,remainingSeconds:Math.ceil(1800-elapsed)};
+    if(elapsed<180)return {error:"Reward cooldown active",status:429,remainingSeconds:Math.ceil(180-elapsed)};
   }
   const pending=await db.prepare("SELECT id FROM leaderboard_ad_rewards WHERE member_id=? AND status='pending' AND created_at>=datetime('now','-10 minutes') LIMIT 1").bind(member.id).first();
   if(!pending)await db.prepare("INSERT INTO leaderboard_ad_rewards (member_id,telegram_id,points,status) VALUES (?,?,3,'pending')").bind(member.id,id).run();
@@ -49,7 +49,7 @@ async function claim(db,telegramId){
   const last=await db.prepare("SELECT rewarded_at FROM leaderboard_ad_rewards WHERE member_id=? AND status='rewarded' ORDER BY rewarded_at DESC LIMIT 1").bind(pending.member_id).first();
   if(last?.rewarded_at){
     const elapsed=(Date.now()-Date.parse(String(last.rewarded_at).replace(" ","T")+"Z"))/1000;
-    if(elapsed<1800)return {awarded:false,cooldown:Math.ceil(1800-elapsed)};
+    if(elapsed<180)return {awarded:false,cooldown:Math.ceil(180-elapsed)};
   }
   const done=await db.prepare("UPDATE leaderboard_ad_rewards SET status='rewarded',rewarded_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'").bind(pending.id).run();
   if(Number(done?.meta?.changes||0)!==1)return {awarded:false};
