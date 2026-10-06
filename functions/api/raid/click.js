@@ -10,6 +10,7 @@ export async function onRequestGet({request,env}){
   const column=PLATFORMS[platform];
   const fixedTarget=FIXED_TARGETS[platform]||"";
   const wallet=String(url.searchParams.get("wallet")||"").trim();
+  const memberToken=String(url.searchParams.get("memberToken")||"").trim();
   if(!Number.isInteger(campaignId)||campaignId<1||(!column&&!fixedTarget))return json({ok:false,error:"Invalid campaign or platform"},400);
   try{
     await env.DB.prepare("ALTER TABLE campaigns ADD COLUMN pump_callout_url TEXT").run().catch(()=>{});
@@ -22,6 +23,12 @@ export async function onRequestGet({request,env}){
       const user=await env.DB.prepare("SELECT id FROM users WHERE wallet_address=?").bind(wallet).first().catch(()=>null);
       userId=user?.id||null;
     }
+    let leaderboardMemberId=null;
+    if(memberToken){
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS leaderboard_members (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,wallet_address TEXT NOT NULL,member_token TEXT NOT NULL UNIQUE,points INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
+      const member=await env.DB.prepare("SELECT id FROM leaderboard_members WHERE member_token=?").bind(memberToken).first().catch(()=>null);
+      leaderboardMemberId=member?.id||null;
+    }
     // Analytics must never block the actual raid link. Older D1 databases may
     // have a legacy raid_actions schema, so create/migrate it before recording.
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS raid_actions (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,user_id INTEGER,platform TEXT NOT NULL,action_type TEXT NOT NULL,external_url TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
@@ -30,6 +37,7 @@ export async function onRequestGet({request,env}){
     const required=[
       ["campaign_id","INTEGER"],
       ["user_id","INTEGER"],
+      ["leaderboard_member_id","INTEGER"],
       ["platform","TEXT"],
       ["action_type","TEXT"],
       ["external_url","TEXT"],
@@ -40,8 +48,8 @@ export async function onRequestGet({request,env}){
     }
     // Never turn a valid X/Telegram/TikTok/Pump link into a JSON error just
     // because analytics logging failed.
-    await env.DB.prepare("INSERT INTO raid_actions (campaign_id,user_id,platform,action_type,external_url) VALUES (?,?,?,?,?)")
-       .bind(campaignId,userId,platform,"click",target).run().catch(error=>console.error("RAID ACTION LOG ERROR",error));
+    await env.DB.prepare("INSERT INTO raid_actions (campaign_id,user_id,leaderboard_member_id,platform,action_type,external_url) VALUES (?,?,?,?,?,?)")
+       .bind(campaignId,userId,leaderboardMemberId,platform,"click",target).run().catch(error=>console.error("RAID ACTION LOG ERROR",error));
     return Response.redirect(target,302);
   }catch(error){
     console.error("RAID CLICK ERROR",error);
