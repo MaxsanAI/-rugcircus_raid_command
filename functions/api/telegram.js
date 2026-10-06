@@ -48,6 +48,7 @@ async function sendPanel(chatId,token,appUrl){
         [{text:"📣 Announce",callback_data:"announce_help"},{text:"🧹 Moderation",callback_data:"clean_help"}],
         [{text:"📌 Pin / Unpin",callback_data:"pin_help"}],
         [{text:"📊 Group Status",callback_data:"group"}],
+        [{text:"🎁 Rewards",web_app:{url:APP_URL+"/rewards"}}],
         [openButton]
       ]
     }
@@ -226,6 +227,7 @@ async function handleCommand(message,env){
       text:"🎪 RUGCIRCUS COMMAND\n\n⚔️ RAID • 🪙 $RUGCX • 📣 CAMPAIGNS • 🛡️ COMMUNITY CONTROL\n\nUse /panel for admin tools or /raid for the active raid.",
       reply_markup:{inline_keyboard:[
         [{text:"🚀 Open App",web_app:{url:appUrl+"/"}}],
+        [{text:"🎁 Rewards",web_app:{url:appUrl+"/rewards"}}],
         [{text:"⚔️ Live Raid",callback_data:"raid"},{text:"🪙 $RUGCX",callback_data:"token"}]
       ]}
     });
