@@ -4,13 +4,18 @@ const API="https://api.telegram.org/bot";
 const APP_URL="https://raidrugcircus.pulserapp.com";
 
 async function tgCall(method,token,body={}){
-  const response=await fetch(API+token+"/"+method,{
-    method:"POST",
-    headers:{"content-type":"application/json"},
-    body:JSON.stringify(body)
-  });
-  const data=await response.json().catch(()=>null);
-  return {ok:response.ok&&data?.ok===true,data};
+  try{
+    const response=await fetch(API+token+"/"+method,{
+      method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    const data=await response.json().catch(()=>null);
+    return {ok:response.ok&&data?.ok===true,data};
+  }catch(error){
+    console.error("TELEGRAM API REQUEST ERROR",method,error);
+    return {ok:false,data:null,error};
+  }
 }
 
 function commandOf(text){
@@ -391,17 +396,30 @@ async function handleCallback(query,env){
 }
 
 export async function onRequestPost({request,env}){
-  if(!env.TELEGRAM_BOT_TOKEN) return new Response("Telegram not configured",{status:503});
+  try{
+    if(!env.TELEGRAM_BOT_TOKEN){
+      console.error("TELEGRAM WEBHOOK ERROR: TELEGRAM_BOT_TOKEN is missing");
+      return new Response("Telegram not configured",{status:503});
+    }
 
-  if(env.TELEGRAM_WEBHOOK_SECRET){
-    const supplied=request.headers.get("X-Telegram-Bot-Api-Secret-Token");
-    if(supplied!==env.TELEGRAM_WEBHOOK_SECRET) return new Response("Unauthorized",{status:401});
+    if(env.TELEGRAM_WEBHOOK_SECRET){
+      const supplied=request.headers.get("X-Telegram-Bot-Api-Secret-Token");
+      if(supplied!==env.TELEGRAM_WEBHOOK_SECRET) return new Response("Unauthorized",{status:401});
+    }
+
+    let update;
+    try{
+      update=await request.json();
+    }catch{
+      return new Response("Bad request",{status:400});
+    }
+
+    if(update.callback_query) await handleCallback(update.callback_query,env);
+    else if(update.message?.text) await handleCommand(update.message,env);
+
+    return new Response("ok");
+  }catch(error){
+    console.error("TELEGRAM WEBHOOK ERROR",error);
+    return new Response("ok");
   }
-
-  let update;
-  try{update=await request.json()}catch{return new Response("Bad request",{status:400})}
-
-  if(update.callback_query) await handleCallback(update.callback_query,env);
-  else if(update.message?.text) await handleCommand(update.message,env);
-  return new Response("ok");
 }
