@@ -23,11 +23,8 @@ export async function onRequestPost({request,env}){
     if(recent)return json({ok:true,awarded:false,points:Number(member.points||0)});
     await env.DB.prepare("INSERT OR IGNORE INTO leaderboard_views (member_id,campaign_id) VALUES (?,?)").bind(member.id,campaignId).run();
     const inserted=await env.DB.prepare("SELECT changes() AS changes").first();
-    if(Number(inserted?.changes||0)>0){
-      await env.DB.prepare("UPDATE leaderboard_members SET points=points+1 WHERE id=?").bind(member.id).run();
-    }
     const current=await env.DB.prepare("SELECT points FROM leaderboard_members WHERE id=?").bind(member.id).first();
-    return json({ok:true,awarded:Number(inserted?.changes||0)>0,points:Number(current?.points||0)});
+    return json({ok:true,recorded:Number(inserted?.changes||0)>0,points:Number(current?.points||0)});
   }catch(error){
     console.error("LEADERBOARD VIEW ERROR",error);
     return json({ok:false,error:"Could not record raid view"},500);
