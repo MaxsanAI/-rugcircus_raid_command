@@ -176,9 +176,9 @@ async function sendAdsgramAd(chatId,telegramId,env,messageFromUsername=""){
 
   const keyboard={inline_keyboard:[
     [{text:String(ad.button_name||"OPEN AD"),url:ad.click_url}],
-    [{text:String(ad.button_reward_name||"🎁 CLAIM +3 POINTS"),url:ad.reward_url}]
+    [{text:String(ad.button_reward_name||("🎁 CLAIM +"+Number(prepared.points||3)+" POINTS")),url:ad.reward_url}]
   ]};
-  const caption=String(ad.text_html||"🎬 Sponsored ad\n\nOpen the ad, complete the visit, then return here and claim your +3 points.");
+  const caption=String(ad.text_html||"🎬 Sponsored ad\n\nOpen the ad, complete the visit, then return here and claim your +"+Number(prepared.points||3)+" points.");
 
   if(ad.image_url){
     const result=await tgCall("sendPhoto",env.TELEGRAM_BOT_TOKEN,{
