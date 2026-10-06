@@ -256,7 +256,14 @@ async function handleCommand(message,env){
   if(cmd==="/announce"){
     if(!group){await sendAdminError(chatId,env,"📣 Use /announce inside a Telegram group.");return;}
     if(!args){await sendAdminError(chatId,env,"📣 Usage: /announce Your announcement text");return;}
-    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📣 RUGCIRCUS ANNOUNCEMENT\n\n"+args});
+    await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{
+      chat_id:chatId,
+      text:"📣 RUGCIRCUS ANNOUNCEMENT\n\n🎪 "+args+"\n\n━━━━━━━━━━━━━━━━━━\n🔥 Stay active. Stay loud. Stay RUGCIRCUS.\n━━━━━━━━━━━━━━━━━━",
+      reply_markup:{inline_keyboard:[
+        [{text:"🚀 OPEN COMMAND CENTER",web_app:{url:APP_URL+"/"}}],
+        [{text:"🪙 $RUGCX",url:"https://pump.fun/coin/3wLrSM5gkSSSQGoivnnnN32Xh6ffjDwFeJFMqnNnSpump"}]
+      ]}
+    });
     return;
   }
 
