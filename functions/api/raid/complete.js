@@ -1,7 +1,8 @@
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 async function ensureSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_members (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,wallet_address TEXT NOT NULL,member_token TEXT NOT NULL UNIQUE,points INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-  await db.prepare("CREATE TABLE IF NOT EXISTS raid_actions (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,user_id INTEGER,platform TEXT NOT NULL,action_type TEXT NOT NULL,external_url TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
+  await db.prepare("CREATE TABLE IF NOT EXISTS raid_actions (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,user_id INTEGER,leaderboard_member_id INTEGER,platform TEXT NOT NULL,action_type TEXT NOT NULL,external_url TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run().catch(()=>{});
+  await db.prepare("ALTER TABLE raid_actions ADD COLUMN leaderboard_member_id INTEGER").run().catch(()=>{});
   await db.prepare("CREATE TABLE IF NOT EXISTS leaderboard_raid_rewards (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,campaign_id INTEGER NOT NULL,points INTEGER NOT NULL DEFAULT 3,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(member_id,campaign_id))").run();
 }
 export async function onRequestPost({request,env}){
@@ -18,7 +19,7 @@ export async function onRequestPost({request,env}){
     const existing=await env.DB.prepare("SELECT id FROM leaderboard_raid_rewards WHERE member_id=? AND campaign_id=? LIMIT 1").bind(member.id,campaignId).first();
     if(existing)return json({ok:true,awarded:false,points:3,message:"You already earned the points for this raid."});
     if(!campaign.x_url)return json({ok:false,error:"This raid has no X task."},400);
-    const click=await env.DB.prepare("SELECT id FROM raid_actions WHERE campaign_id=? AND user_id IS NULL AND platform='x' AND action_type='click' AND created_at>=datetime('now','-30 minutes') ORDER BY id DESC LIMIT 1").bind(campaignId).first();
+    const click=await env.DB.prepare("SELECT id FROM raid_actions WHERE campaign_id=? AND leaderboard_member_id=? AND platform='x' AND action_type='click' AND created_at>=datetime('now','-30 minutes') ORDER BY id DESC LIMIT 1").bind(campaignId,member.id).first();
     if(!click){
       return json({ok:false,error:"Open the X raid first. Like it, repost it and leave a comment, then return here and claim your +3 points."},403);
     }
