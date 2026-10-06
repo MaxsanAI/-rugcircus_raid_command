@@ -6,7 +6,6 @@
 <title>RUGCIRCUS — Rewards</title>
 <meta name="description" content="Earn RUGCIRCUS Reward Points by completing community tasks, sponsored offers and social raids.">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@3.0.2/dist/tonconnect-ui.min.js"></script>
 <script src="https://w.tads.me/widget.js"></script>
 <style>
 :root{color-scheme:dark;--bg:#07060b;--panel:#11101a;--panel2:#171320;--line:rgba(255,255,255,.08);--text:#fffaff;--muted:#a99db8;--hot:#ff3d87;--pink:#ff68b0;--violet:#8d63ff;--gold:#ffc857;--green:#55e6a5;--cyan:#55d8ff}
@@ -33,8 +32,8 @@ a{text-decoration:none;color:inherit}button{font:inherit;cursor:pointer}.app{min
 </section>
 
 <section class="join">
-<div class="joinTop"><div><div class="eyebrow">LEADERBOARD ACCESS</div><h2>Join the Reward Wall</h2><p>Telegram identifies you. Connect your TON wallet once so your points can count toward leaderboard rewards.</p></div><button class="joinBtn" id="joinBtn">CONNECT & JOIN</button></div>
-<div class="status" id="joinStatus">Open this page inside the Telegram Mini App to verify your Telegram account.</div>
+<div class="joinTop"><div><div class="eyebrow">LEADERBOARD ACCESS</div><h2>Join the Reward Wall</h2><p>Telegram identifies you. Telegram identifies you automatically. Join once to start earning points. A wallet can be added later when rewards are distributed.</p></div><button class="joinBtn" id="joinBtn">JOIN REWARDS</button></div>
+<div class="status" id="joinStatus">Checking your Telegram session…</div>
 </section>
 
 <div class="sectionHead"><div><div class="eyebrow">COMMUNITY TASKS</div><h2>Complete & Earn</h2><p>One-time or daily limits are shown on each task.</p></div></div>
@@ -60,15 +59,45 @@ a{text-decoration:none;color:inherit}button{font:inherit;cursor:pointer}.app{min
 </main>
 </div>
 <script>
-const TOKEN_KEY="rugcircus_leaderboard_token",WALLET_KEY="rugcircus_ton_wallet";
-let tg=null,telegramInitData="",telegramUser=null,ton=null,memberToken=localStorage.getItem(TOKEN_KEY)||"",wallet=localStorage.getItem(WALLET_KEY)||"";
+const TOKEN_KEY="rugcircus_leaderboard_token";
+let tg=null,telegramInitData="",telegramUser=null,memberToken=localStorage.getItem(TOKEN_KEY)||"";
 const $=id=>document.getElementById(id);
 function telegram(){return window.Telegram?.WebApp||null}
 function toast(s){alert(s)}
 function auth(){return telegramInitData?{"x-telegram-init-data":telegramInitData}:{}}
 function initTelegram(){tg=telegram();if(tg){tg.ready();tg.expand();telegramInitData=tg.initData||"";telegramUser=tg.initDataUnsafe?.user||null}}
-function initTon(){if(ton||!window.TON_CONNECT_UI?.TonConnectUI)return !!ton;try{ton=new window.TON_CONNECT_UI.TonConnectUI({manifestUrl:"https://raidrugcircus.pulserapp.com/tonconnect-manifest.json",buttonRootId:null,language:"en",uiPreferences:{theme:"DARK"}});ton.onStatusChange(a=>{wallet=String(a?.account?.address||"");if(wallet)localStorage.setItem(WALLET_KEY,wallet);updateIdentity()});return true}catch{return false}}
-async function join(){if(!telegramInitData||!telegramUser){$("joinStatus").textContent="Open the RUGCIRCUS Rewards page inside Telegram to verify your account.";return}if(!initTon()){toast("Wallet connector is still loading. Try again.");return}try{if(!wallet){await ton.openModal();await ton.connectionRestored;wallet=String(ton.account?.address||"");if(wallet)localStorage.setItem(WALLET_KEY,wallet)}if(!wallet){$("joinStatus").textContent="Connect your TON wallet to continue.";return}const username=String(telegramUser.username||("tg_"+telegramUser.id)).replace(/^@/,"");const r=await fetch("/api/leaderboard/join",{method:"POST",headers:{"content-type":"application/json",...auth()},body:JSON.stringify({username,wallet,memberToken,telegramInitData})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"Could not join Reward Wall");memberToken=d.memberToken;localStorage.setItem(TOKEN_KEY,memberToken);updateMonetag();localStorage.setItem("rugcircus_leaderboard_username",d.member.username);$("joinStatus").className="status good";$("joinStatus").textContent="✓ Reward Wall joined · @"+String(d.member.username).replace(/^@/,"");$("joinBtn").textContent="CONNECTED";await refresh()}catch(e){$("joinStatus").textContent=e.message||"Could not join Reward Wall"}}
+async function join(){
+  if(!telegramInitData||!telegramUser){
+    $("joinStatus").className="status";
+    $("joinStatus").textContent="Open RUGCIRCUS from Telegram to join Rewards.";
+    return;
+  }
+  const button=$("joinBtn");
+  button.disabled=true;
+  try{
+    const username=String(telegramUser.username||("tg_"+telegramUser.id)).replace(/^@/,"");
+    const r=await fetch("/api/leaderboard/join",{
+      method:"POST",
+      headers:{"content-type":"application/json",...auth()},
+      body:JSON.stringify({username,memberToken,telegramInitData})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok)throw new Error(d.error||"Could not join Reward Wall");
+    memberToken=String(d.memberToken||memberToken);
+    if(memberToken)localStorage.setItem(TOKEN_KEY,memberToken);
+    updateMonetag();
+    localStorage.setItem("rugcircus_leaderboard_username",d.member.username);
+    $("joinStatus").className="status good";
+    $("joinStatus").textContent="✓ Rewards joined · @"+String(d.member.username).replace(/^@/,"");
+    button.textContent="JOINED";
+    await refresh();
+  }catch(e){
+    $("joinStatus").className="status";
+    $("joinStatus").textContent=e.message||"Could not join Reward Wall";
+  }finally{
+    button.disabled=false;
+  }
+}
 function updateMonetag(){const a=$("monetagBtn");if(a)a.href=memberToken?"/api/sponsor/click?memberToken="+encodeURIComponent(memberToken):"/api/sponsor/click"}
 function updateIdentity(){if(memberToken){$("joinStatus").className="status good";$("joinStatus").textContent=wallet?"✓ Reward Wall session ready":"Reward Wall session found · connect your TON wallet to continue";$("joinBtn").textContent=wallet?"CONNECTED":"CONNECT WALLET"}updateMonetag()}
 async function taskClaim(task){if(!memberToken){toast("Join the Reward Wall first.");return}const b=document.querySelector('[data-task="'+task+'"]');if(b)b.disabled=true;try{const r=await fetch("/api/rewards/task",{method:"POST",headers:{"content-type":"application/json",...auth()},body:JSON.stringify({memberToken,task})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"Task could not be verified");toast(d.awarded?"Reward added: +"+d.points+" points":"Task already completed");await refresh()}catch(e){toast(e.message||"Task unavailable")}finally{if(b)b.disabled=false}}
@@ -76,7 +105,50 @@ async function loadRaids(){const el=$("raids");try{const r=await fetch("/api/cam
 async function claimRaid(id){if(!memberToken){toast("Join the Reward Wall first.");return}try{const r=await fetch("/api/raid/complete",{method:"POST",headers:{"content-type":"application/json",...auth()},body:JSON.stringify({memberToken,campaignId:id})}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Open the X raid first, complete the actions, then claim.");toast(d.awarded?"+3 raid points added.":d.message||"Raid already completed.");await refresh()}catch(e){toast(e.message||"Raid could not be completed")}}
 async function refresh(){try{const r=await fetch("/api/rewards?memberToken="+encodeURIComponent(memberToken),{cache:"no-store"}),d=await r.json();if(d.ok){const me=d.me;if(me){memberToken=memberToken||me.memberToken;$("myPoints").textContent=Number(me.points||0)+" pts"}$("pool").textContent="Reward pool "+Number(d.rewardPoolGram||0).toFixed(3)+" GRAM";const rows=d.leaderboard||[];$("leaderboard").innerHTML='<div class="row head"><span>#</span><b>RAIDER</b><span>WALLET</span><strong>POINTS</strong></div>'+(rows.length?rows.map((x,i)=>'<div class="row"><span class="rank">'+(i<3?["🥇","🥈","🥉"][i]:i+1)+'</span><b>@'+String(x.username||"Anonymous")+'</b><span>'+String(x.wallet||"—")+'</span><strong>'+Number(x.points||0)+" pts</strong></div>").join(""):'<div class="status">No raiders have joined yet.</div>')}}catch{}await loadRaids()}
 $("joinBtn").addEventListener("click",join);document.querySelectorAll("[data-task]").forEach(b=>b.addEventListener("click",()=>taskClaim(b.dataset.task)));
-function initTads(){const wrap=$("tadsWrap"),status=$("tadsStatus");if(!wrap||!window.tads?.init)return;const adsNotFound=()=>{wrap.style.display="none"};try{const adController=window.tads.init({widgetId:12484,type:"static",debug:false,onAdsNotFound:adsNotFound});adController.loadAd().then(()=>{status.textContent="Sponsored";return adController.showAd()}).catch(()=>adsNotFound())}catch{adsNotFound()}}
+function initTads(){
+  const wrap=$("tadsWrap"),status=$("tadsStatus");
+  if(!wrap||!status)return;
+  const hide=()=>{wrap.style.display="none"};
+  const showError=()=>{status.textContent="Sponsor unavailable";setTimeout(hide,1500)};
+  const init=()=>{
+    try{
+      if(!window.tads||typeof window.tads.init!=="function"){showError();return}
+      const adController=window.tads.init({
+        widgetId:"12484",
+        type:"static",
+        debug:false,
+        onAdsNotFound:hide
+      });
+      if(!adController||typeof adController.loadAd!=="function"){showError();return}
+      const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("TADS timeout")),8000));
+      Promise.race([adController.loadAd(),timeout])
+        .then(()=>{
+          status.textContent="Sponsored";
+          return adController.showAd();
+        })
+        .catch((err)=>{
+          console.warn("TADS:",err);
+          hide();
+        });
+    }catch(err){
+      console.warn("TADS init:",err);
+      hide();
+    }
+  };
+  if(window.tads&&typeof window.tads.init==="function")init();
+  else{
+    const started=performance.now();
+    const iv=setInterval(()=>{
+      if(window.tads&&typeof window.tads.init==="function"){
+        clearInterval(iv);
+        init();
+      }else if(performance.now()-started>5000){
+        clearInterval(iv);
+        hide();
+      }
+    },100);
+  }
+}
 async function boot(){initTelegram();initTon();updateIdentity();initTads();await refresh()}boot();
 </script>
 </body>
