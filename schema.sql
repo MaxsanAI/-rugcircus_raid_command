@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS reward_task_claims (id INTEGER PRIMARY KEY AUTOINCREM
 CREATE TABLE IF NOT EXISTS leaderboard_raid_rewards (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,campaign_id INTEGER NOT NULL,points INTEGER NOT NULL DEFAULT 3,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(member_id,campaign_id));
 CREATE INDEX IF NOT EXISTS idx_reward_task_claims_tg ON reward_task_claims(telegram_id,task);
 CREATE INDEX IF NOT EXISTS idx_leaderboard_raid_rewards_member ON leaderboard_raid_rewards(member_id,created_at);
+
+CREATE TABLE IF NOT EXISTS tads_ad_events (id INTEGER PRIMARY KEY AUTOINCREMENT,telegram_id TEXT NOT NULL,widget_id TEXT NOT NULL,event_type TEXT NOT NULL,method TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX IF NOT EXISTS idx_tads_ad_events_user ON tads_ad_events(telegram_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_tads_ad_events_widget ON tads_ad_events(widget_id,event_type,created_at);
