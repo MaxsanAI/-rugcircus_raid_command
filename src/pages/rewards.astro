@@ -99,7 +99,25 @@ async function join(){
   }
 }
 function updateMonetag(){const a=$("monetagBtn");if(a)a.href=memberToken?"/api/sponsor/click?memberToken="+encodeURIComponent(memberToken):"/api/sponsor/click"}
-function updateIdentity(){if(memberToken){$("joinStatus").className="status good";$("joinStatus").textContent=wallet?"✓ Reward Wall session ready":"Reward Wall session found · connect your TON wallet to continue";$("joinBtn").textContent=wallet?"CONNECTED":"CONNECT WALLET"}updateMonetag()}
+function updateIdentity(){
+  if(!telegramInitData||!telegramUser){
+    $("joinStatus").className="status";
+    $("joinStatus").textContent="Open RUGCIRCUS from Telegram to join Rewards.";
+    $("joinBtn").textContent="OPEN IN TELEGRAM";
+    updateMonetag();
+    return;
+  }
+  if(memberToken){
+    $("joinStatus").className="status good";
+    $("joinStatus").textContent="✓ Telegram account detected · Reward Wall membership found";
+    $("joinBtn").textContent="JOINED";
+  }else{
+    $("joinStatus").className="status good";
+    $("joinStatus").textContent="✓ Telegram account detected · tap Join Rewards to opt in";
+    $("joinBtn").textContent="JOIN REWARDS";
+  }
+  updateMonetag();
+}
 async function taskClaim(task){if(!memberToken){toast("Join the Reward Wall first.");return}const b=document.querySelector('[data-task="'+task+'"]');if(b)b.disabled=true;try{const r=await fetch("/api/rewards/task",{method:"POST",headers:{"content-type":"application/json",...auth()},body:JSON.stringify({memberToken,task})}),d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"Task could not be verified");toast(d.awarded?"Reward added: +"+d.points+" points":"Task already completed");await refresh()}catch(e){toast(e.message||"Task unavailable")}finally{if(b)b.disabled=false}}
 async function loadRaids(){const el=$("raids");try{const r=await fetch("/api/campaigns?live="+Date.now(),{cache:"no-store"}),d=await r.json();if(!d.ok)throw new Error();const rows=(d.campaigns||[]).filter(x=>String(x.status||"").toLowerCase()==="active");if(!rows.length){el.innerHTML='<div class="status">No active raids right now.</div>';return}el.innerHTML=rows.map(x=>{const img=x.logo_url?'<img src="'+String(x.logo_url).replace(/"/g,"&quot;")+'" alt="" loading="lazy">':'<span>⚔️ RUGCIRCUS RAID</span>';return '<article class="raid"><div class="raidTop"><div><div class="eyebrow">LIVE RAID</div><h3>$'+String(x.ticker||"TOKEN")+' · '+String(x.name||"Campaign")+'</h3><div class="raidCopy">'+String(x.raid_copy||"Complete the social raid actions to earn points.")+'</div></div><span class="points">+3</span></div><div class="raidImage">'+img+'</div><div class="raidNote">⚠️ REQUIRED: LIKE ❤️ · COMMENT 💬 · REPOST 🔁 on X before claiming your +3 points.</div><div class="raidActions"><a class="taskBtn hot raidXLink" data-base-url="/api/raid/click?campaign='+Number(x.id)+'&platform=x" href="/api/raid/click?campaign='+Number(x.id)+'&platform=x" target="_blank" rel="noopener">𝕏 OPEN X RAID</a><button class="taskBtn claim full" data-raid="'+Number(x.id)+'">CLAIM RAID +3</button></div></article>'}).join("");el.querySelectorAll(".raidXLink").forEach(a=>{a.href=a.dataset.baseUrl+"&memberToken="+encodeURIComponent(memberToken)});el.querySelectorAll("[data-raid]").forEach(b=>b.addEventListener("click",()=>claimRaid(Number(b.dataset.raid))))}catch{el.innerHTML='<div class="status">Live raids are unavailable right now.</div>'}}
 async function claimRaid(id){if(!memberToken){toast("Join the Reward Wall first.");return}try{const r=await fetch("/api/raid/complete",{method:"POST",headers:{"content-type":"application/json",...auth()},body:JSON.stringify({memberToken,campaignId:id})}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Open the X raid first, complete the actions, then claim.");toast(d.awarded?"+3 raid points added.":d.message||"Raid already completed.");await refresh()}catch(e){toast(e.message||"Raid could not be completed")}}
