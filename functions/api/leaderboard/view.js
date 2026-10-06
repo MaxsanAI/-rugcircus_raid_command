@@ -19,7 +19,7 @@ export async function onRequestPost({request,env}){
     if(!member)return json({ok:false,error:"Leaderboard membership not found"},401);
     const campaign=await env.DB.prepare("SELECT id FROM campaigns WHERE id=? AND status='active' AND (ends_at IS NULL OR datetime(ends_at)>datetime('now'))").bind(campaignId).first();
     if(!campaign)return json({ok:false,error:"Campaign is no longer active"},404);
-    const recent=await env.DB.prepare("SELECT id FROM leaderboard_views WHERE member_id=? AND campaign_id=? AND viewed_at>=datetime('now','-24 hours') LIMIT 1").bind(member.id,campaignId).first();
+    const recent=await env.DB.prepare("SELECT id FROM leaderboard_views WHERE member_id=? AND campaign_id=? AND viewed_at>=datetime('now','-1 hour') LIMIT 1").bind(member.id,campaignId).first();
     if(recent)return json({ok:true,awarded:false,points:Number(member.points||0)});
     await env.DB.prepare("INSERT OR IGNORE INTO leaderboard_views (member_id,campaign_id) VALUES (?,?)").bind(member.id,campaignId).run();
     const inserted=await env.DB.prepare("SELECT changes() AS changes").first();
