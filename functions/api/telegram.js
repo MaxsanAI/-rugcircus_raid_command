@@ -75,6 +75,9 @@ async function sendRaid(chatId,env,chatUsername){
     raid?.package ? "📦 "+raid.package : "📦 Community Raid",
     raid?.raid_copy ? "\n📣 "+raid.raid_copy : "",
     "",
+    "⚡ COMPLETE THE ACTIONS TO EARN YOUR POINTS",
+    "❤️ LIKE • 💬 COMMENT • 🔁 REPOST",
+    "",
     "🔥 Join the raid and open the Command Center."
   ];
   const appUrl=APP_URL;
