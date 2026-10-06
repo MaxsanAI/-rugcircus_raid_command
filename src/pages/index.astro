@@ -6,8 +6,6 @@
 <title>RUGCIRCUS COMMAND — Raid & Community Control</title>
 <meta name="description" content="RUGCIRCUS COMMAND — free Telegram group administration, social raids, Solana token campaigns and optional Premium Operator monetization.">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://w.tads.me/widget.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@3.0.2/dist/tonconnect-ui.min.js"></script>
 
 <style>
 :root{color-scheme:dark;--bg:#07060b;--panel:#0d0b13;--panel2:#14101d;--line:#2b2238;--text:#fffaff;--muted:#a99db8;--hot:#ff3d87;--pink:#ff68b0;--violet:#8d63ff;--gold:#ffc857;--green:#55e6a5;--cyan:#55d8ff}
@@ -461,7 +459,7 @@ async function initTadsHome(){
   }
 }
 
-async function config(){try{const r=await fetch("/api/config",{cache:"no-store",headers:walletAddress?{"x-ton-wallet-address":walletAddress,"x-telegram-init-data":telegramInitData}:{}});const d=await r.json();tonTreasury=d.tonTreasury||"";premiumOperator=Boolean(d.premiumOperator);adsgramBlockId=String(d.adsgramBlockId||"").trim();if(adsgramBlockId)runRugcircusBackground(initAdsgram,"AdsGram initialization");if(d.monetagSmartLink){const a=document.getElementById("sponsorLink");if(a){a.href="/api/sponsor/click";a.onclick=e=>{e.preventDefault();window.open("/api/sponsor/click?memberToken="+encodeURIComponent(leaderboardToken()),"_blank","noopener")}}}document.getElementById("premiumStatus").textContent=tonTreasury?"Free campaigns pay to the RUGCIRCUS treasury. Premium Operators can use their own payout wallet.":"Treasury is not configured yet."}catch{}}
+async function config(){try{const r=await fetch("/api/config",{cache:"no-store",headers:walletAddress?{"x-ton-wallet-address":walletAddress,"x-telegram-init-data":telegramInitData}:{}});const d=await r.json();tonTreasury=d.tonTreasury||"";premiumOperator=Boolean(d.premiumOperator);adsgramBlockId=String(d.adsgramBlockId||"").trim();if(d.monetagSmartLink){const a=document.getElementById("sponsorLink");if(a){a.href="/api/sponsor/click";a.onclick=e=>{e.preventDefault();window.open("/api/sponsor/click?memberToken="+encodeURIComponent(leaderboardToken()),"_blank","noopener")}}}document.getElementById("premiumStatus").textContent=tonTreasury?"Free campaigns pay to the RUGCIRCUS treasury. Premium Operators can use their own payout wallet.":"Treasury is not configured yet."}catch{}}
 async function sendTonPayment(nano,address){if(!tonConnectUI&&!initTonConnect()){toast("TON Connect could not be loaded");return null}const from=walletAddress||await connectTon();if(!from||!address)return null;try{const result=await tonConnectUI.sendTransaction({validUntil:Math.floor(Date.now()/1000)+300,network:"-239",messages:[{address:String(address),amount:String(nano)}]});if(!result?.boc)throw new Error("TON Wallet did not return the signed transaction");return result}catch(e){throw new Error(e?.message||"TON payment failed")}}
 function openPay(name,amount){pay={name,amount};document.getElementById("payTitle").textContent=name;document.getElementById("payAmount").textContent=amount.toFixed(2)+" GRAM";document.getElementById("payStatus").textContent=Number(amount)===0?"No wallet required. The raid will be posted automatically to @rugcxx.":"TON Wallet will show the exact GRAM amount and treasury recipient before you approve.";document.getElementById("payModal").classList.add("open")}
 function closePay(){document.getElementById("payModal").classList.remove("open")}function openPremium(){document.getElementById("premiumModal").classList.add("open")}function closePremium(){document.getElementById("premiumModal").classList.remove("open")}
@@ -530,7 +528,6 @@ function runRugcircusBackground(task,label){
     console.warn("RUGCIRCUS campaign boot failed",e);
   }
 
-  runRugcircusBackground(()=>initTonConnect(),"TON Connect initialization");
   runRugcircusBackground(config,"remote config");
   runRugcircusBackground(loadAnalytics,"analytics");
   runRugcircusBackground(loadRewards,"rewards");
