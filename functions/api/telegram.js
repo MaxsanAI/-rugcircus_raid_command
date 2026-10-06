@@ -405,6 +405,27 @@ async function handleCallback(query,env){
   else if(action==="pin_help") await tgCall("sendMessage",env.TELEGRAM_BOT_TOKEN,{chat_id:chatId,text:"📌 Reply to a message with /pin to pin it, or use /unpin to remove the current pin."});
 }
 
+async function recordBotGroupReward(update,env){
+  if(!env.DB||!update?.my_chat_member)return;
+  const change=update.my_chat_member;
+  const chat=change.chat;
+  const actor=change.from;
+  const next=change.new_chat_member;
+  const group=chat?.type==="group"||chat?.type==="supergroup";
+  if(!group||!actor?.id||!next)return;
+  const status=String(next.status||"");
+  if(!["member","administrator"].includes(status))return;
+  try{
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS reward_task_claims (id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,telegram_id TEXT NOT NULL,task TEXT NOT NULL,points INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(member_id,task))").run();
+    const member=await env.DB.prepare("SELECT id FROM leaderboard_members WHERE telegram_id=?").bind(String(actor.id)).first();
+    if(!member)return;
+    const existing=await env.DB.prepare("SELECT id FROM reward_task_claims WHERE member_id=? AND task='bot_group' LIMIT 1").bind(member.id).first();
+    if(existing)return;
+    await env.DB.prepare("INSERT INTO reward_task_claims (member_id,telegram_id,task,points) VALUES (?,?,?,3)").bind(member.id,String(actor.id),"bot_group").run();
+    await env.DB.prepare("UPDATE leaderboard_members SET points=points+3 WHERE id=?").bind(member.id).run();
+  }catch(error){console.error("BOT GROUP REWARD ERROR",error)}
+}
+
 export async function onRequestPost({request,env}){
   try{
     if(!env.TELEGRAM_BOT_TOKEN){
@@ -425,6 +446,7 @@ export async function onRequestPost({request,env}){
     }
 
     if(update.callback_query) await handleCallback(update.callback_query,env);
+    else if(update.my_chat_member) await recordBotGroupReward(update,env);
     else if(update.message?.text) await handleCommand(update.message,env);
 
     return new Response("ok");
