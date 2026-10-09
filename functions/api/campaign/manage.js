@@ -1,4 +1,5 @@
 import {Address} from "@ton/core";
+import {telegramUserFromRequest} from "../_telegram.js";
 import {resolveRaidImage} from "../raid/image.js";
 import {publishRaidCard} from "../raid/publish.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
@@ -24,52 +25,37 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE tokens ADD COLUMN telegram_url TEXT").run().catch(()=>{});
 }
 
-function ownerFromRequest(request){
+async function ownerFromRequest(request,env){
   const walletRaw=clean(request.headers.get("x-ton-wallet-address"),100);let wallet="";try{wallet=Address.parse(walletRaw).toRawString()}catch{}
   const freeUserId=clean(request.headers.get("x-free-user-id"),128);
-  return {
-    wallet:WALLET_RE.test(walletRaw)||wallet?wallet:"",
-    freeUserId:FREE_RE.test(freeUserId)?freeUserId:""
-  };
+  const telegramUser=await telegramUserFromRequest(request,env);
+  return {wallet:WALLET_RE.test(walletRaw)||wallet?wallet:"",freeUserId:FREE_RE.test(freeUserId)?freeUserId:"",telegramId:telegramUser?.id?String(telegramUser.id):""};
 }
 
 async function getOwnedCampaign(db,id,owner){
   const row=await db.prepare(
-    "SELECT c.id,c.token_id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE c.id=? AND ((COALESCE(c.creator_wallet,p.wallet_address) IS NOT NULL AND COALESCE(c.creator_wallet,p.wallet_address)=?) OR (c.free_user_id IS NOT NULL AND c.free_user_id=?))"
-  ).bind(id,owner.wallet||"__none__",owner.freeUserId||"__none__").first();
+    "SELECT c.id,c.token_id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE c.id=? AND ((COALESCE(c.creator_wallet,p.wallet_address) IS NOT NULL AND COALESCE(c.creator_wallet,p.wallet_address)=?) OR (c.free_user_id IS NOT NULL AND c.free_user_id=?) OR (c.telegram_id IS NOT NULL AND c.telegram_id=?))"
+  ).bind(id,owner.wallet||"__none__",owner.freeUserId||"__none__",owner.telegramId||"__none__").first();
   return row||null;
 }
 
 export async function onRequestGet({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   await ensureSchema(env.DB);
-  const owner=ownerFromRequest(request);
-  if(!owner.wallet&&!owner.freeUserId)return json({ok:false,error:"Connect the TON Wallet used to create paid campaigns or use the same browser for free campaigns."},401);
-  let rows=[];
-  if(owner.wallet&&owner.freeUserId){
-    const r=await env.DB.prepare(
-      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE COALESCE(c.creator_wallet,p.wallet_address)=? OR c.free_user_id=? ORDER BY c.created_at DESC LIMIT 100"
-    ).bind(owner.wallet,owner.freeUserId).all();
-    rows=r.results||[];
-  }else if(owner.wallet){
-    const r=await env.DB.prepare(
-      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE COALESCE(c.creator_wallet,p.wallet_address)=? ORDER BY c.created_at DESC LIMIT 100"
-    ).bind(owner.wallet).all();
-    rows=r.results||[];
-  }else{
-    const r=await env.DB.prepare(
-      "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,c.creator_wallet,c.free_user_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id WHERE c.free_user_id=? ORDER BY c.created_at DESC LIMIT 100"
-    ).bind(owner.freeUserId).all();
-    rows=r.results||[];
-  }
+  const owner=await ownerFromRequest(request,env);
+  if(!owner.wallet&&!owner.freeUserId&&!owner.telegramId)return json({ok:false,error:"Open the Command Center from the Telegram account that created the campaign, or use the same browser for a legacy free campaign."},401);
+  const r=await env.DB.prepare(
+    "SELECT c.id,c.package,c.amount_sol,c.duration_hours,c.status,c.starts_at,c.ends_at,c.x_url,c.tiktok_url,c.telegram_url,c.raid_copy,c.pump_callout_url,c.telegram_group,c.payment_signature,COALESCE(c.creator_wallet,p.wallet_address) AS creator_wallet,c.free_user_id,c.telegram_id,t.id AS token_id,t.mint_address,t.ticker,t.name,t.logo_url,t.pump_url,t.dex_url FROM campaigns c JOIN tokens t ON t.id=c.token_id LEFT JOIN payments p ON p.campaign_id=c.id WHERE (COALESCE(c.creator_wallet,p.wallet_address)=? AND ?<>'__none__') OR (c.free_user_id=? AND ?<>'__none__') OR (c.telegram_id=? AND ?<>'__none__') ORDER BY c.created_at DESC LIMIT 100"
+  ).bind(owner.wallet||"__none__",owner.wallet||"__none__",owner.freeUserId||"__none__",owner.freeUserId||"__none__",owner.telegramId||"__none__").all();
+  const rows=r.results||[];
   return json({ok:true,campaigns:rows});
 }
 
 export async function onRequestPost({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   await ensureSchema(env.DB);
-  const owner=ownerFromRequest(request);
-  if(!owner.wallet&&!owner.freeUserId)return json({ok:false,error:"Campaign ownership could not be verified."},401);
+  const owner=await ownerFromRequest(request,env);
+  if(!owner.wallet&&!owner.freeUserId&&!owner.telegramId)return json({ok:false,error:"Open the Command Center from the Telegram account that created the campaign."},401);
   let body;try{body=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
   const id=Number(body.id);
   if(!Number.isInteger(id)||id<=0)return json({ok:false,error:"Invalid campaign id"},400);
@@ -128,8 +114,8 @@ export async function onRequestPost({request,env}){
 export async function onRequestDelete({request,env}){
   if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
   await ensureSchema(env.DB);
-  const owner=ownerFromRequest(request);
-  if(!owner.wallet&&!owner.freeUserId)return json({ok:false,error:"Campaign ownership could not be verified."},401);
+  const owner=await ownerFromRequest(request,env);
+  if(!owner.wallet&&!owner.freeUserId&&!owner.telegramId)return json({ok:false,error:"Open the Command Center from the Telegram account that created the campaign."},401);
   let body;try{body=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
   const id=Number(body.id);
   if(!Number.isInteger(id)||id<=0)return json({ok:false,error:"Invalid campaign id"},400);
