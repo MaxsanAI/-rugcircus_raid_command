@@ -19,6 +19,7 @@ async function ensureSchema(db){
   await db.prepare("ALTER TABLE campaigns ADD COLUMN raid_copy TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN status TEXT DEFAULT 'active'").run().catch(()=>{});
   await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_message_id INTEGER").run().catch(()=>{});
+  await db.prepare("ALTER TABLE campaigns ADD COLUMN telegram_id TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN logo_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN x_url TEXT").run().catch(()=>{});
   await db.prepare("ALTER TABLE tokens ADD COLUMN tiktok_url TEXT").run().catch(()=>{});
