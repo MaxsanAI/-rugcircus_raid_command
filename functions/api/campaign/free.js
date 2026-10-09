@@ -169,7 +169,7 @@ export async function onRequestPost({request,env}){
     const campaignId=row.meta?.last_row_id;
     if(!campaignId)return json({ok:false,error:"Campaign was not created"},500);
 
-    const telegram=await publishRaidCard(env,campaignId,telegramGroup,mint,ticker,name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl,mint);
+    const telegram=await publishRaidCard(env,campaignId,telegramGroup,ticker||"RUGCX",name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl,mint);
 
     if(!telegram.ok){
       await env.DB.prepare("UPDATE campaigns SET status='failed' WHERE id=?").bind(campaignId).run().catch(()=>{});
