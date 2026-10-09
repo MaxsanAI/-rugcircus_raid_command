@@ -37,6 +37,7 @@ export async function publishRaidCard(env,campaignId,targetGroup,ticker,name,pac
     {text:"🤖 AI HUB PRO NEWS",url:"https://t.me/Aihubpronewsbot"},
     {text:"🚀 OPEN COMMAND CENTER",url:"https://raidrugcircus.pulserapp.com/"}
   ]);
+  buttons.push([{text:"🎁 WATCH AD · SUPPORT RUGCIRCUS",url:"https://uplcm.com/4/11992044"}]);
   const caption=lines.join("\n");
   let response;
   if(imageUrl){
