@@ -44,6 +44,7 @@ async function ensureSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT,campaign_id INTEGER NOT NULL,signature TEXT UNIQUE NOT NULL,wallet_address TEXT,lamports INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending',verified_at TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS featured_tokens (token_id INTEGER PRIMARY KEY,priority INTEGER NOT NULL DEFAULT 0,starts_at TEXT,ends_at TEXT)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS premium_operators (id INTEGER PRIMARY KEY AUTOINCREMENT,wallet_address TEXT UNIQUE NOT NULL,telegram_id TEXT,x_handle TEXT,status TEXT NOT NULL DEFAULT 'active',paid_signature TEXT UNIQUE NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS free_raid_credits (telegram_id TEXT PRIMARY KEY, credits INTEGER NOT NULL DEFAULT 0, last_ad_at TEXT)").run();
 
   const tableColumns=async(table)=>{
     const result=await db.prepare("PRAGMA table_info("+table+")").all();
