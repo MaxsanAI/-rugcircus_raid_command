@@ -90,6 +90,7 @@ async function ensureSchema(db){
     ["payout_wallet","TEXT"],
     ["creator_wallet","TEXT"],
     ["free_user_id","TEXT"],
+    ["telegram_id","TEXT"],
     ["pump_callout_url","TEXT"],
     ["telegram_group","TEXT"],
     ["starts_at","TEXT"],
