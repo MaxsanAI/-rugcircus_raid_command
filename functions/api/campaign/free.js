@@ -132,6 +132,8 @@ async function upsertToken(db,{mint,ticker,name,xUrl,tiktokUrl,telegramUrl,logoU
 }
 
 export async function onRequestPost({request,env}){
+  let creditConsumed=false;
+  let creditedTelegramId="";
   try{
     if(!env.DB)return json({ok:false,error:"Database is not configured"},503);
     if(!env.TELEGRAM_BOT_TOKEN)return json({ok:false,error:"Telegram bot is not configured"},503);
@@ -141,6 +143,8 @@ export async function onRequestPost({request,env}){
 
     const clientId=String(body.clientId||"").trim();
     const telegramUser=await telegramUserFromRequest(request,env);
+    if(!telegramUser?.id)return json({ok:false,error:"Open the Command Center inside Telegram. A verified Telegram account is required for free raids."},401);
+    creditedTelegramId=String(telegramUser.id);
     const mint=String(body.mintAddress||"").trim();
     const telegramGroup=normalizeTelegramGroup(body.telegramGroup)||normalizeTelegramGroup(env.TELEGRAM_RAID_CHAT_ID)||"@rugcxx";
 
@@ -153,16 +157,15 @@ export async function onRequestPost({request,env}){
     const botCheck=await verifyBotAdmin(env,telegramGroup);
     if(!botCheck.ok)return json({ok:false,error:botCheck.error,telegram:botCheck},403);
 
-    const used=await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE free_user_id=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(clientId).first();
-    if(Number(used?.count||0)>=3){
-      return json({ok:false,error:"You have used all 3 free raids for the last 24 hours",remainingFreeRaids:0},429);
-    }
-
     const ticker=String(body.ticker||"").trim().replace(/[^A-Za-z0-9_]/g,"").slice(0,15);
     const name=String(body.name||ticker||"Token").trim().slice(0,80);
 
     const logoUrl=await resolveRaidImage(body.imageUrl,body.xUrl,body.tiktokUrl);
     const token=await upsertToken(env.DB,{mint,ticker,name,xUrl:String(body.xUrl||"").trim(),tiktokUrl:String(body.tiktokUrl||"").trim(),telegramUrl:String(body.telegramUrl||"").trim(),logoUrl});
+
+    const credit=await env.DB.prepare("UPDATE free_raid_credits SET credits=credits-1 WHERE telegram_id=? AND credits>0").bind(creditedTelegramId).run();
+    if(Number(credit?.meta?.changes||0)!==1)return json({ok:false,error:"You need a free-raid credit first. Open Reward Wall and tap WATCH ADS, then finish the Monetag ad."},403);
+    creditConsumed=true;
 
     const now=new Date();
     const ends=new Date(now.getTime()+24*3600000);
@@ -170,18 +173,28 @@ export async function onRequestPost({request,env}){
       .bind(token.id,"FREE RAID",0,0,24,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",env.PUBLIC_TREASURY_WALLET||null,null,clientId,telegramGroup,telegramUser?.id?String(telegramUser.id):null,now.toISOString(),ends.toISOString()).run();
 
     const campaignId=row.meta?.last_row_id;
-    if(!campaignId)return json({ok:false,error:"Campaign was not created"},500);
+    if(!campaignId){
+      await env.DB.prepare("UPDATE free_raid_credits SET credits=credits+1 WHERE telegram_id=?").bind(creditedTelegramId).run().catch(()=>{});
+      creditConsumed=false;
+      return json({ok:false,error:"Campaign was not created"},500);
+    }
 
     const telegram=await publishRaidCard(env,campaignId,telegramGroup,ticker||"RUGCX",name,"FREE RAID",ends.toISOString(),String(body.xUrl||"").trim(),String(body.tiktokUrl||"").trim(),String(body.telegramUrl||"").trim(),String(body.pumpCalloutUrl||"").trim(),String(body.raidCopy||"").trim(),logoUrl,mint);
 
     if(!telegram.ok){
       await env.DB.prepare("UPDATE campaigns SET status='failed' WHERE id=?").bind(campaignId).run().catch(()=>{});
+      await env.DB.prepare("UPDATE free_raid_credits SET credits=credits+1 WHERE telegram_id=?").bind(creditedTelegramId).run().catch(()=>{});
+      creditConsumed=false;
       return json({ok:false,error:telegram.error||"Telegram could not publish the raid card",campaignId,telegram},502);
     }
 
-    const remainingFreeRaids=Math.max(0,3-Number((await env.DB.prepare("SELECT COUNT(*) AS count FROM campaigns WHERE free_user_id=? AND package='FREE RAID' AND created_at>=datetime('now','-24 hours')").bind(clientId).first())?.count||0));
-    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingFreeRaids,telegram});
+    creditConsumed=false;
+    const remainingCredits=Number((await env.DB.prepare("SELECT credits FROM free_raid_credits WHERE telegram_id=?").bind(creditedTelegramId).first())?.credits||0);
+    return json({ok:true,campaignId,endsAt:ends.toISOString(),remainingCredits,telegram});
   }catch(error){
+    if(creditConsumed&&creditedTelegramId){
+      await env.DB?.prepare("UPDATE free_raid_credits SET credits=credits+1 WHERE telegram_id=?").bind(creditedTelegramId).run().catch(()=>{});
+    }
     console.error("FREE RAID ERROR",error);
     return json({ok:false,error:String(error?.message||error||"Unknown server error")},500);
   }
