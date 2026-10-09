@@ -1,5 +1,6 @@
 import {resolveRaidImage} from "../raid/image.js";
 import {publishRaidCard} from "../raid/publish.js";
+import {telegramUserFromRequest} from "../_telegram.js";
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}})}
 
 function normalizeTelegramGroup(value){
@@ -138,6 +139,7 @@ export async function onRequestPost({request,env}){
     try{body=await request.json()}catch{return json({ok:false,error:"Invalid JSON"},400)}
 
     const clientId=String(body.clientId||"").trim();
+    const telegramUser=await telegramUserFromRequest(request,env);
     const mint=String(body.mintAddress||"").trim();
     const telegramGroup=normalizeTelegramGroup(body.telegramGroup)||normalizeTelegramGroup(env.TELEGRAM_RAID_CHAT_ID)||"@rugcxx";
 
@@ -163,8 +165,8 @@ export async function onRequestPost({request,env}){
 
     const now=new Date();
     const ends=new Date(now.getTime()+24*3600000);
-    const row=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,amount_sol,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payout_wallet,creator_wallet,free_user_id,telegram_group,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-      .bind(token.id,"FREE RAID",0,0,24,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",env.PUBLIC_TREASURY_WALLET||null,null,clientId,telegramGroup,now.toISOString(),ends.toISOString()).run();
+    const row=await env.DB.prepare("INSERT INTO campaigns (token_id,package,amount_lamports,amount_sol,duration_hours,x_url,tiktok_url,telegram_url,raid_copy,pump_callout_url,status,payout_wallet,creator_wallet,free_user_id,telegram_group,telegram_id,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(token.id,"FREE RAID",0,0,24,String(body.xUrl||"").trim()||null,String(body.tiktokUrl||"").trim()||null,String(body.telegramUrl||"").trim()||null,String(body.raidCopy||"").trim()||null,String(body.pumpCalloutUrl||"").trim()||null,"active",env.PUBLIC_TREASURY_WALLET||null,null,clientId,telegramGroup,telegramUser?.id?String(telegramUser.id):null,now.toISOString(),ends.toISOString()).run();
 
     const campaignId=row.meta?.last_row_id;
     if(!campaignId)return json({ok:false,error:"Campaign was not created"},500);
